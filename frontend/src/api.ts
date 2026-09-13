@@ -40,6 +40,14 @@ export interface Video {
   progress?: DownloadProgress | null;
 }
 
+export interface ChannelVideoPreview {
+  youtubeId: string;
+  title: string;
+  url: string;
+  thumbnail: string | null;
+  duration: number | null;
+}
+
 export interface Settings {
   language: "de" | "en";
   dark_mode: boolean;
@@ -75,7 +83,12 @@ export const api = {
     request<Channel>(`/api/channels/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   deleteChannel: (id: number) => request<void>(`/api/channels/${id}`, { method: "DELETE" }),
   fetchChannelVideos: (id: number) =>
-    request<Video[]>(`/api/channels/${id}/fetch`, { method: "POST" }),
+    request<ChannelVideoPreview[]>(`/api/channels/${id}/fetch`, { method: "POST" }),
+  downloadChannelVideos: (id: number, videos: ChannelVideoPreview[], audioOnly?: boolean) =>
+    request<{ queued: number[] }>(`/api/channels/${id}/download`, {
+      method: "POST",
+      body: JSON.stringify({ videos, audio_only: audioOnly }),
+    }),
 
   addVideo: (url: string, audioOnly?: boolean) =>
     request<Video>("/api/videos", {

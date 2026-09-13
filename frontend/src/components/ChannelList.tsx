@@ -1,15 +1,16 @@
-import { Channel, Video } from "../api";
+import { Channel, ChannelVideoPreview } from "../api";
 import { ChannelListItem } from "./ChannelListItem";
 import { useTranslation } from "../i18n/I18nContext";
 
 interface Props {
   channels: Channel[];
-  onFetch: (id: number) => Promise<Video[]>;
+  onFetch: (id: number) => Promise<ChannelVideoPreview[]>;
+  onDownload: (id: number, videos: ChannelVideoPreview[]) => Promise<{ queued: number[] }>;
   onToggleAudioOnly: (id: number, audioOnly: boolean) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }
 
-export function ChannelList({ channels, onFetch, onToggleAudioOnly, onDelete }: Props) {
+export function ChannelList({ channels, onFetch, onDownload, onToggleAudioOnly, onDelete }: Props) {
   const { t } = useTranslation();
 
   if (channels.length === 0) {
@@ -23,6 +24,7 @@ export function ChannelList({ channels, onFetch, onToggleAudioOnly, onDelete }: 
           key={c.id}
           channel={c}
           onFetch={onFetch}
+          onDownload={onDownload}
           onToggleAudioOnly={onToggleAudioOnly}
           onDelete={onDelete}
         />

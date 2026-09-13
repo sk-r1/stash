@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, Channel } from "../api";
+import { api, Channel, ChannelVideoPreview } from "../api";
 import { ChannelForm } from "../components/ChannelForm";
 import { ChannelList } from "../components/ChannelList";
 import { useTranslation } from "../i18n/I18nContext";
@@ -24,6 +24,10 @@ export function ChannelManagement() {
     return api.fetchChannelVideos(id);
   }
 
+  async function handleDownload(id: number, videos: ChannelVideoPreview[]) {
+    return api.downloadChannelVideos(id, videos);
+  }
+
   async function handleToggleAudioOnly(id: number, audioOnly: boolean) {
     await api.updateChannel(id, { audio_only: audioOnly ? 1 : 0 });
     refresh();
@@ -43,6 +47,7 @@ export function ChannelManagement() {
         <ChannelList
           channels={channels}
           onFetch={handleFetch}
+          onDownload={handleDownload}
           onToggleAudioOnly={handleToggleAudioOnly}
           onDelete={handleDelete}
         />

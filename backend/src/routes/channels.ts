@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "../db";
-import { resolveChannel } from "../yt-dlp";
-import { fetchNewVideosForChannel } from "../scheduler";
-import { ChannelRow } from "../types";
+import { resolveChannel, FlatEntry } from "../yt-dlp";
+import { listNewVideosForChannel } from "../scheduler";
+import { enqueueVideoForDownload } from "./downloads";
+import { ChannelRow, VideoRow } from "../types";
 
 const router = Router();
 
@@ -16,6 +17,13 @@ const updateChannelStmt = db.prepare(`
   UPDATE channels SET name = @name, audio_only = @audio_only WHERE id = @id
 `);
 const deleteChannelStmt = db.prepare("DELETE FROM channels WHERE id = ?");
+
+const getVideoStmt = db.prepare("SELECT * FROM videos WHERE id = ?");
+const getVideoByYoutubeIdStmt = db.prepare("SELECT * FROM videos WHERE youtube_id = ?");
+const insertVideoStmt = db.prepare(`
+  INSERT INTO videos (channel_id, youtube_id, title, description, url, thumbnail, duration, audio_only, status)
+  VALUES (@channel_id, @youtube_id, @title, @description, @url, @thumbnail, @duration, @audio_only, 'pending')
+`);
 
 router.get("/", (_req, res) => {
   res.json(listChannelsStmt.all());
@@ -68,6 +76,7 @@ router.delete("/:id", (req, res) => {
   res.status(204).end();
 });
 
+/** Previews videos the channel has that we don't know about yet — nothing is inserted here. */
 router.post("/:id/fetch", async (req, res) => {
   const channel = getChannelStmt.get(req.params.id) as ChannelRow | undefined;
   if (!channel) {
@@ -75,11 +84,51 @@ router.post("/:id/fetch", async (req, res) => {
     return;
   }
   try {
-    const inserted = await fetchNewVideosForChannel(channel);
-    res.json(inserted);
+    const found = await listNewVideosForChannel(channel);
+    res.json(found);
   } catch (err) {
     res.status(502).json({ error: `Could not fetch videos: ${(err as Error).message}` });
   }
+});
+
+/** Adds and immediately queues the videos the user picked from the fetch preview. */
+router.post("/:id/download", (req, res) => {
+  const channel = getChannelStmt.get(req.params.id) as ChannelRow | undefined;
+  if (!channel) {
+    res.status(404).json({ error: "Channel not found" });
+    return;
+  }
+
+  const { videos, audio_only } = req.body as { videos?: FlatEntry[]; audio_only?: boolean };
+  if (!Array.isArray(videos) || videos.length === 0) {
+    res.status(400).json({ error: "videos is required" });
+    return;
+  }
+
+  const queued: number[] = [];
+  for (const v of videos) {
+    if (!v || !v.youtubeId) continue;
+
+    let row = getVideoByYoutubeIdStmt.get(v.youtubeId) as VideoRow | undefined;
+    if (!row) {
+      const effectiveAudioOnly = audio_only !== undefined ? (audio_only ? 1 : 0) : channel.audio_only;
+      const info = insertVideoStmt.run({
+        channel_id: channel.id,
+        youtube_id: v.youtubeId,
+        title: v.title,
+        description: null,
+        url: v.url,
+        thumbnail: v.thumbnail,
+        duration: v.duration,
+        audio_only: effectiveAudioOnly,
+      });
+      row = getVideoStmt.get(info.lastInsertRowid) as VideoRow;
+    }
+
+    if (enqueueVideoForDownload(row.id, audio_only)) queued.push(row.id);
+  }
+
+  res.status(202).json({ queued });
 });
 
 export default router;
