@@ -1,0 +1,17 @@
+services:
+  stash:
+    image: ghcr.io/sk-r1/stash:latest
+    container_name: stash
+    ports:
+      - "6070:3000" # Frontend
+      - "6071:3001" # Backend API
+    volumes:
+      - /volume4/docker/stash/data:/app/data
+      - /volume4/docker/stash/videos:/videos
+    environment:
+      NODE_ENV: production
+      DB_PATH: /app/data/stash.db
+      VIDEOS_PATH: /videos
+      FRONTEND_PORT: "3000"
+      BACKEND_PORT: "3001"
+    restart: unless-stopped
