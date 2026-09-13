@@ -77,6 +77,12 @@ export const api = {
   fetchChannelVideos: (id: number) =>
     request<Video[]>(`/api/channels/${id}/fetch`, { method: "POST" }),
 
+  addVideo: (url: string, audioOnly?: boolean) =>
+    request<Video>("/api/videos", {
+      method: "POST",
+      body: JSON.stringify({ url, audio_only: audioOnly }),
+    }),
+
   getVideos: (filters: { status?: string; channel_id?: number; search?: string; sort?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set("status", filters.status);

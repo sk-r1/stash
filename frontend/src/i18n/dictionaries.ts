@@ -4,6 +4,9 @@ export const de = {
   nav_downloads: "Downloads",
   nav_settings: "Einstellungen",
 
+  video_url_placeholder: "Video-URL einfügen…",
+  video_url_download: "Herunterladen",
+
   library_search_placeholder: "Videos durchsuchen…",
   library_filter_all_channels: "Alle Kanäle",
   library_filter_all_status: "Alle Status",
@@ -22,6 +25,8 @@ export const de = {
   channels_add_placeholder: "Kanal-URL einfügen…",
   channels_add_button: "Kanal hinzufügen",
   channels_fetch_button: "Neue Videos laden",
+  channels_fetch_found: "{count} neue(s) Video(s) gefunden",
+  channels_fetch_none: "Keine neuen Videos gefunden",
   channels_audio_only: "Nur Audio",
   channels_delete: "Entfernen",
   channels_empty: "Noch keine Kanäle hinzugefügt.",
@@ -48,6 +53,9 @@ export const en: typeof de = {
   nav_downloads: "Downloads",
   nav_settings: "Settings",
 
+  video_url_placeholder: "Paste video URL…",
+  video_url_download: "Download",
+
   library_search_placeholder: "Search videos…",
   library_filter_all_channels: "All channels",
   library_filter_all_status: "All statuses",
@@ -66,6 +74,8 @@ export const en: typeof de = {
   channels_add_placeholder: "Paste channel URL…",
   channels_add_button: "Add channel",
   channels_fetch_button: "Fetch new videos",
+  channels_fetch_found: "Found {count} new video(s)",
+  channels_fetch_none: "No new videos found",
   channels_audio_only: "Audio only",
   channels_delete: "Remove",
   channels_empty: "No channels added yet.",

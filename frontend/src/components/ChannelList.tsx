@@ -1,10 +1,10 @@
-import { Channel } from "../api";
+import { Channel, Video } from "../api";
 import { ChannelListItem } from "./ChannelListItem";
 import { useTranslation } from "../i18n/I18nContext";
 
 interface Props {
   channels: Channel[];
-  onFetch: (id: number) => Promise<void>;
+  onFetch: (id: number) => Promise<Video[]>;
   onToggleAudioOnly: (id: number, audioOnly: boolean) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }

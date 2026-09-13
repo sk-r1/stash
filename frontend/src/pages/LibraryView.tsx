@@ -3,6 +3,7 @@ import { api, Channel } from "../api";
 import { usePolling } from "../hooks/usePolling";
 import { FilterBar, VideoFilters } from "../components/FilterBar";
 import { VideoGallery } from "../components/VideoGallery";
+import { VideoUrlForm } from "../components/VideoUrlForm";
 import { useTranslation } from "../i18n/I18nContext";
 
 const DEFAULT_FILTERS: VideoFilters = { status: "", channel_id: "", search: "", sort: "date" };
@@ -13,9 +14,11 @@ export function LibraryView() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
+  function refreshChannels() {
     api.getChannels().then(setChannels).catch(() => {});
-  }, []);
+  }
+
+  useEffect(refreshChannels, []);
 
   const fetchVideos = useMemo(
     () => () =>
@@ -61,9 +64,16 @@ export function LibraryView() {
     refresh();
   }
 
+  async function handleAddVideoUrl(url: string) {
+    await api.addVideo(url);
+    refresh();
+    refreshChannels();
+  }
+
   return (
     <div>
       <h2>{t("nav_library")}</h2>
+      <VideoUrlForm onAdd={handleAddVideoUrl} />
       <FilterBar channels={channels} filters={filters} onChange={setFilters} />
       {selectedIds.size > 0 && (
         <button className="btn" style={{ marginTop: "1rem" }} onClick={handleDownloadSelected}>

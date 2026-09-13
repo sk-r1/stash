@@ -1,12 +1,26 @@
 import { Router } from "express";
 import fs from "node:fs";
 import { db } from "../db";
-import { VideoRow } from "../types";
+import { getVideoMetadata } from "../yt-dlp";
+import { enqueueVideoForDownload } from "./downloads";
+import { ChannelRow, VideoRow } from "../types";
 
 const router = Router();
 
 const getVideoStmt = db.prepare("SELECT * FROM videos WHERE id = ?");
+const getVideoByYoutubeIdStmt = db.prepare("SELECT * FROM videos WHERE youtube_id = ?");
 const deleteVideoStmt = db.prepare("DELETE FROM videos WHERE id = ?");
+
+const getChannelByUrlStmt = db.prepare("SELECT * FROM channels WHERE url = ?");
+const getChannelByIdStmt = db.prepare("SELECT * FROM channels WHERE id = ?");
+const insertChannelStmt = db.prepare(`
+  INSERT INTO channels (name, url, channel_id, description, thumbnail_url, audio_only)
+  VALUES (@name, @url, @channel_id, @description, @thumbnail_url, @audio_only)
+`);
+const insertVideoStmt = db.prepare(`
+  INSERT INTO videos (channel_id, youtube_id, title, description, url, thumbnail, duration, audio_only, status)
+  VALUES (@channel_id, @youtube_id, @title, @description, @url, @thumbnail, @duration, @audio_only, 'pending')
+`);
 
 const SORT_COLUMNS: Record<string, string> = {
   date: "v.created_at",
@@ -46,6 +60,71 @@ router.get("/", (req, res) => {
     .all(params);
 
   res.json(rows);
+});
+
+/** Adds a single video by URL (auto-discovering/reusing its channel) and immediately queues it. */
+router.post("/", async (req, res) => {
+  const { url, audio_only } = req.body as { url?: string; audio_only?: boolean };
+  if (!url) {
+    res.status(400).json({ error: "url is required" });
+    return;
+  }
+
+  let meta;
+  try {
+    meta = await getVideoMetadata(url);
+  } catch (err) {
+    res.status(502).json({ error: `Could not resolve video: ${(err as Error).message}` });
+    return;
+  }
+
+  const existingVideo = getVideoByYoutubeIdStmt.get(meta.youtubeId) as VideoRow | undefined;
+  if (existingVideo) {
+    if (existingVideo.status === "completed") {
+      res.status(409).json({ error: "Video already downloaded" });
+      return;
+    }
+    enqueueVideoForDownload(existingVideo.id, audio_only);
+    res.status(202).json(getVideoStmt.get(existingVideo.id));
+    return;
+  }
+
+  let channel = getChannelByUrlStmt.get(meta.channelUrl) as ChannelRow | undefined;
+  if (!channel) {
+    const info = insertChannelStmt.run({
+      name: meta.channelName,
+      url: meta.channelUrl,
+      channel_id: meta.channelId,
+      description: null,
+      thumbnail_url: meta.channelThumbnailUrl,
+      audio_only: 0,
+    });
+    channel = getChannelByIdStmt.get(info.lastInsertRowid) as ChannelRow;
+  }
+
+  const effectiveAudioOnly = audio_only !== undefined ? (audio_only ? 1 : 0) : channel.audio_only;
+  let videoId: number | bigint;
+  try {
+    const info = insertVideoStmt.run({
+      channel_id: channel.id,
+      youtube_id: meta.youtubeId,
+      title: meta.title,
+      description: meta.description,
+      url,
+      thumbnail: meta.thumbnail,
+      duration: meta.duration,
+      audio_only: effectiveAudioOnly,
+    });
+    videoId = info.lastInsertRowid;
+  } catch (err) {
+    if ((err as any).code !== "SQLITE_CONSTRAINT_UNIQUE") throw err;
+    // Lost a race with a concurrent identical request; use the row it just inserted.
+    const raced = getVideoByYoutubeIdStmt.get(meta.youtubeId) as VideoRow;
+    videoId = raced.id;
+  }
+
+  enqueueVideoForDownload(videoId as number, audio_only);
+  res.status(202).json(getVideoStmt.get(videoId));
 });
 
 router.delete("/:id", (req, res) => {

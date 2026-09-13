@@ -116,6 +116,23 @@ export function resumeQueuedDownloads(): void {
   tryStartNext();
 }
 
+/**
+ * Marks a video pending+queued and kicks the pump. Shared by the batch route
+ * and by "add a single video by URL", which enqueues immediately on insert.
+ */
+export function enqueueVideoForDownload(videoId: number, audioOnly?: boolean): boolean {
+  const existing = getVideoWithChannelStmt.get(videoId) as VideoRow | undefined;
+  if (!existing || existing.status === "completed" || existing.status === "downloading" || active.has(videoId)) {
+    return false;
+  }
+
+  const effectiveAudioOnly = audioOnly !== undefined ? (audioOnly ? 1 : 0) : existing.audio_only;
+  setPendingQueuedStmt.run(effectiveAudioOnly, videoId);
+  if (!queue.includes(videoId)) queue.push(videoId);
+  tryStartNext();
+  return true;
+}
+
 router.get("/", (_req, res) => {
   const rows = downloadsQueueViewStmt.all() as VideoRow[];
   const withProgress = rows.map((row) => ({
@@ -132,20 +149,7 @@ router.post("/batch", (req, res) => {
     return;
   }
 
-  const enqueued: number[] = [];
-  for (const videoId of video_ids) {
-    const existing = getVideoWithChannelStmt.get(videoId) as VideoRow | undefined;
-    if (!existing || existing.status === "completed" || existing.status === "downloading" || active.has(videoId)) {
-      continue;
-    }
-
-    const effectiveAudioOnly = audio_only !== undefined ? (audio_only ? 1 : 0) : existing.audio_only;
-    setPendingQueuedStmt.run(effectiveAudioOnly, videoId);
-    if (!queue.includes(videoId)) queue.push(videoId);
-    enqueued.push(videoId);
-  }
-
-  tryStartNext();
+  const enqueued = video_ids.filter((videoId) => enqueueVideoForDownload(videoId, audio_only));
   res.status(202).json({ enqueued });
 });
 

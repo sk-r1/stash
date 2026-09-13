@@ -44,6 +44,20 @@ function runCollectText(bin: string, args: string[]): Promise<string> {
   });
 }
 
+const CHANNEL_TAB_RE = /\/(videos|shorts|streams|playlists|community)(\/|\?|$)/i;
+const DIRECT_MEDIA_RE = /\/(watch\?v=|playlist\?list=)/i;
+
+/**
+ * yt-dlp's flat-playlist on a bare channel URL (no tab suffix) returns the
+ * channel's tabs themselves (Videos/Shorts/Live/...) as top-level entries,
+ * each with a channel-shaped id — not the videos inside them. Pointing at
+ * the "videos" tab explicitly makes it list actual videos instead.
+ */
+function toVideosTabUrl(url: string): string {
+  if (CHANNEL_TAB_RE.test(url) || DIRECT_MEDIA_RE.test(url)) return url;
+  return url.replace(/\/+$/, "") + "/videos";
+}
+
 export interface ChannelMeta {
   name: string;
   channelId: string | null;
@@ -73,36 +87,60 @@ export interface FlatEntry {
   youtubeId: string;
   title: string;
   url: string;
-}
-
-/** Cheap listing of a channel's videos (no per-video metadata resolution). */
-export async function listChannelVideos(url: string): Promise<FlatEntry[]> {
-  const data = await runCollectJson(["--flat-playlist", "--dump-single-json", url]);
-  const entries: any[] = data.entries || [];
-  return entries
-    .filter((e) => e && e.id)
-    .map((e) => ({
-      youtubeId: e.id as string,
-      title: (e.title as string) || e.id,
-      url: (e.url as string) || `https://www.youtube.com/watch?v=${e.id}`,
-    }));
-}
-
-export interface VideoMeta {
-  title: string;
-  description: string | null;
   thumbnail: string | null;
   duration: number | null;
 }
 
-/** Full metadata for a single new video, without downloading it. */
+function bestThumbnail(thumbnails: Array<{ url: string }> | undefined): string | null {
+  return thumbnails && thumbnails.length ? thumbnails[thumbnails.length - 1].url : null;
+}
+
+/**
+ * Cheap listing of a channel's videos: a single yt-dlp call for the whole channel,
+ * using whatever lightweight fields the tab page already exposes (no per-video
+ * metadata resolution — that would mean one extra yt-dlp process per video, which
+ * is far too slow for channels with more than a handful of uploads).
+ */
+export async function listChannelVideos(url: string): Promise<FlatEntry[]> {
+  const data = await runCollectJson(["--flat-playlist", "--dump-single-json", toVideosTabUrl(url)]);
+  const entries: any[] = data.entries || [];
+  return entries
+    .filter((e) => e && e.id && /^[A-Za-z0-9_-]{11}$/.test(e.id) && e._type !== "playlist" && e._type !== "url")
+    .map((e) => ({
+      youtubeId: e.id as string,
+      title: (e.title as string) || e.id,
+      url: (e.url as string) || `https://www.youtube.com/watch?v=${e.id}`,
+      thumbnail: bestThumbnail(e.thumbnails),
+      duration: typeof e.duration === "number" ? e.duration : null,
+    }));
+}
+
+export interface VideoMeta {
+  youtubeId: string;
+  title: string;
+  description: string | null;
+  thumbnail: string | null;
+  duration: number | null;
+  channelName: string;
+  channelUrl: string;
+  channelId: string | null;
+  channelThumbnailUrl: string | null;
+}
+
+/** Full metadata for a single video, without downloading it — used for adding one video by URL. */
 export async function getVideoMetadata(url: string): Promise<VideoMeta> {
   const data = await runCollectJson(["--dump-json", "--no-download", "--no-playlist", url]);
+  const channelUrl: string | null = data.channel_url || data.uploader_url || null;
   return {
+    youtubeId: data.id,
     title: data.title || url,
     description: data.description || null,
     thumbnail: data.thumbnail || null,
     duration: typeof data.duration === "number" ? data.duration : null,
+    channelName: data.channel || data.uploader || "Unknown",
+    channelUrl: channelUrl || `https://www.youtube.com/channel/${data.channel_id || data.uploader_id}`,
+    channelId: data.channel_id || data.uploader_id || null,
+    channelThumbnailUrl: bestThumbnail(data.channel_thumbnails || data.uploader_thumbnails),
   };
 }
 

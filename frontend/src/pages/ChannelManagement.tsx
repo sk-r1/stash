@@ -21,7 +21,7 @@ export function ChannelManagement() {
   }
 
   async function handleFetch(id: number) {
-    await api.fetchChannelVideos(id);
+    return api.fetchChannelVideos(id);
   }
 
   async function handleToggleAudioOnly(id: number, audioOnly: boolean) {

@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { listChannelVideos, getVideoMetadata } from "./yt-dlp";
+import { listChannelVideos } from "./yt-dlp";
 import { ChannelRow, VideoRow } from "./types";
 
 const existingYoutubeIdStmt = db.prepare("SELECT 1 FROM videos WHERE youtube_id = ?");
@@ -15,6 +15,13 @@ const getVideoStmt = db.prepare("SELECT * FROM videos WHERE id = ?");
  * On-demand "fetch new videos" for a channel: diffs the channel's video list
  * against known youtube_ids and inserts genuinely new ones as pending rows.
  * Manual-trigger only — no interval/cron job calls this.
+ *
+ * Uses only the single flat-playlist listing call, not a per-video metadata
+ * fetch — a channel can have hundreds of uploads, and resolving each one
+ * individually would turn "fetch new videos" into one yt-dlp process per
+ * video (way too slow to feel like it did anything). Full technical
+ * metadata (resolution/bitrate) is filled in later anyway, once the video
+ * actually downloads.
  */
 export async function fetchNewVideosForChannel(channel: ChannelRow): Promise<VideoRow[]> {
   const entries = await listChannelVideos(channel.url);
@@ -22,21 +29,14 @@ export async function fetchNewVideosForChannel(channel: ChannelRow): Promise<Vid
 
   const inserted: VideoRow[] = [];
   for (const entry of newEntries) {
-    let meta;
-    try {
-      meta = await getVideoMetadata(entry.url);
-    } catch {
-      meta = { title: entry.title, description: null, thumbnail: null, duration: null };
-    }
-
     const info = insertVideoStmt.run({
       channel_id: channel.id,
       youtube_id: entry.youtubeId,
-      title: meta.title,
-      description: meta.description,
+      title: entry.title,
+      description: null,
       url: entry.url,
-      thumbnail: meta.thumbnail,
-      duration: meta.duration,
+      thumbnail: entry.thumbnail,
+      duration: entry.duration,
       audio_only: channel.audio_only,
     });
 
