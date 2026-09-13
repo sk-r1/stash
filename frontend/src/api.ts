@@ -38,6 +38,7 @@ export interface Video {
   downloaded_at: string | null;
   created_at: string;
   progress?: DownloadProgress | null;
+  stream_url?: string | null;
 }
 
 export interface ChannelVideoPreview {

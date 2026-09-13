@@ -7,12 +7,16 @@ import { ChannelRow, VideoRow } from "../types";
 
 const router = Router();
 
-const listChannelsStmt = db.prepare("SELECT * FROM channels ORDER BY name COLLATE NOCASE");
+const listChannelsStmt = db.prepare(
+  "SELECT * FROM channels WHERE subscribed = 1 ORDER BY name COLLATE NOCASE"
+);
 const getChannelStmt = db.prepare("SELECT * FROM channels WHERE id = ?");
+const getChannelByUrlStmt = db.prepare("SELECT * FROM channels WHERE url = ?");
 const insertChannelStmt = db.prepare(`
-  INSERT INTO channels (name, url, channel_id, description, thumbnail_url, audio_only)
-  VALUES (@name, @url, @channel_id, @description, @thumbnail_url, @audio_only)
+  INSERT INTO channels (name, url, channel_id, description, thumbnail_url, audio_only, subscribed)
+  VALUES (@name, @url, @channel_id, @description, @thumbnail_url, @audio_only, 1)
 `);
+const markSubscribedStmt = db.prepare("UPDATE channels SET subscribed = 1 WHERE id = ?");
 const updateChannelStmt = db.prepare(`
   UPDATE channels SET name = @name, audio_only = @audio_only WHERE id = @id
 `);
@@ -33,6 +37,19 @@ router.post("/", async (req, res) => {
   const { url } = req.body as { url?: string };
   if (!url) {
     res.status(400).json({ error: "url is required" });
+    return;
+  }
+
+  const existing = getChannelByUrlStmt.get(url) as ChannelRow | undefined;
+  if (existing) {
+    if (existing.subscribed) {
+      res.status(409).json({ error: "Channel already added" });
+      return;
+    }
+    // Was only auto-created as the uploader of a single video someone added by
+    // URL — promote it to a real subscription instead of erroring.
+    markSubscribedStmt.run(existing.id);
+    res.status(200).json(getChannelStmt.get(existing.id));
     return;
   }
 

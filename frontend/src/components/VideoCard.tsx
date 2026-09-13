@@ -38,9 +38,22 @@ export function VideoCard({ video, selected, onToggleSelect, onDelete }: Props) 
       {video.status === "error" && video.error_message && (
         <div className="error-text">{video.error_message}</div>
       )}
-      <button className="btn btn-secondary" style={{ marginTop: "0.5rem" }} onClick={() => onDelete(video.id)}>
-        {t("library_delete")}
-      </button>
+      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+        {video.status === "completed" && video.stream_url && (
+          <a
+            className="btn btn-secondary"
+            href={video.stream_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t("library_play_hint")}
+          >
+            {t("library_play")}
+          </a>
+        )}
+        <button className="btn btn-secondary" onClick={() => onDelete(video.id)}>
+          {t("library_delete")}
+        </button>
+      </div>
     </div>
   );
 }

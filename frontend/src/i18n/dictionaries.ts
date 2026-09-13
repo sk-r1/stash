@@ -16,6 +16,8 @@ export const de = {
   library_empty: "Keine Videos gefunden.",
   library_download_selected: "Ausgewählte herunterladen",
   library_delete: "Löschen",
+  library_play: "Abspielen",
+  library_play_hint: "Öffnet die Videodatei im Browser. Der Link lässt sich auch in VLC unter „Netzwerkstream öffnen“ einfügen.",
 
   status_pending: "Ausstehend",
   status_downloading: "Lädt herunter",
@@ -68,6 +70,8 @@ export const en: typeof de = {
   library_empty: "No videos found.",
   library_download_selected: "Download selected",
   library_delete: "Delete",
+  library_play: "Play",
+  library_play_hint: "Opens the video file in the browser. The same link can be pasted into VLC's \"Open Network Stream\".",
 
   status_pending: "Pending",
   status_downloading: "Downloading",

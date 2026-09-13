@@ -10,6 +10,7 @@ import settingsRouter from "./routes/settings";
 const BACKEND_PORT = Number(process.env.BACKEND_PORT) || 3001;
 const FRONTEND_PORT = Number(process.env.FRONTEND_PORT) || 3000;
 const FRONTEND_DIST = path.join(__dirname, "..", "..", "frontend", "dist");
+const VIDEOS_PATH = process.env.VIDEOS_PATH || path.join(__dirname, "..", "..", "videos");
 
 const app = express();
 app.use(cors());
@@ -19,6 +20,10 @@ app.use("/api/channels", channelsRouter);
 app.use("/api/videos", videosRouter);
 app.use("/api/downloads", downloadsRouter);
 app.use("/api", settingsRouter);
+
+// Serves downloaded files directly (range-request support built in) so a video
+// can be played straight from the browser or opened as a network stream in VLC.
+app.use("/media", express.static(VIDEOS_PATH));
 
 app.use(express.static(FRONTEND_DIST));
 app.get(/^(?!\/api).*/, (_req, res) => {

@@ -186,7 +186,10 @@ export function startDownload(
     url,
   ];
 
-  const child = spawn(YT_DLP_BIN, args);
+  // Python block-buffers stdout when it isn't a TTY (i.e. always, when spawned
+  // from Node), so progress lines would otherwise only surface in large,
+  // delayed chunks instead of as they're printed.
+  const child = spawn(YT_DLP_BIN, args, { env: { ...process.env, PYTHONUNBUFFERED: "1" } });
   let stderr = "";
   let filePath: string | null = null;
 

@@ -1,11 +1,21 @@
 import { Router } from "express";
 import fs from "node:fs";
+import path from "node:path";
 import { db } from "../db";
 import { getVideoMetadata } from "../yt-dlp";
 import { enqueueVideoForDownload } from "./downloads";
 import { ChannelRow, VideoRow } from "../types";
 
 const router = Router();
+
+const VIDEOS_PATH = process.env.VIDEOS_PATH || path.join(__dirname, "..", "..", "videos");
+
+function toStreamUrl(filePath: string | null): string | null {
+  if (!filePath) return null;
+  const rel = path.relative(VIDEOS_PATH, filePath);
+  if (rel.startsWith("..")) return null;
+  return "/media/" + rel.split(path.sep).map(encodeURIComponent).join("/");
+}
 
 const getVideoStmt = db.prepare("SELECT * FROM videos WHERE id = ?");
 const getVideoByYoutubeIdStmt = db.prepare("SELECT * FROM videos WHERE youtube_id = ?");
@@ -14,8 +24,8 @@ const deleteVideoStmt = db.prepare("DELETE FROM videos WHERE id = ?");
 const getChannelByUrlStmt = db.prepare("SELECT * FROM channels WHERE url = ?");
 const getChannelByIdStmt = db.prepare("SELECT * FROM channels WHERE id = ?");
 const insertChannelStmt = db.prepare(`
-  INSERT INTO channels (name, url, channel_id, description, thumbnail_url, audio_only)
-  VALUES (@name, @url, @channel_id, @description, @thumbnail_url, @audio_only)
+  INSERT INTO channels (name, url, channel_id, description, thumbnail_url, audio_only, subscribed)
+  VALUES (@name, @url, @channel_id, @description, @thumbnail_url, @audio_only, 0)
 `);
 const insertVideoStmt = db.prepare(`
   INSERT INTO videos (channel_id, youtube_id, title, description, url, thumbnail, duration, audio_only, status)
@@ -57,9 +67,9 @@ router.get("/", (req, res) => {
        ${where}
        ORDER BY ${sortColumn} DESC`
     )
-    .all(params);
+    .all(params) as VideoRow[];
 
-  res.json(rows);
+  res.json(rows.map((row) => ({ ...row, stream_url: toStreamUrl(row.video_file_path) })));
 });
 
 /** Adds a single video by URL (auto-discovering/reusing its channel) and immediately queues it. */

@@ -21,7 +21,8 @@ db.exec(`
     description TEXT,
     thumbnail_url TEXT,
     audio_only INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    subscribed INTEGER NOT NULL DEFAULT 1
   );
 
   CREATE UNIQUE INDEX IF NOT EXISTS idx_channels_url ON channels(url);
@@ -56,6 +57,17 @@ db.exec(`
     value TEXT NOT NULL
   );
 `);
+
+// CREATE TABLE IF NOT EXISTS is a no-op on a table that already exists, so a
+// column added after the app was first deployed needs an explicit migration.
+function hasColumn(table: string, column: string): boolean {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return columns.some((c) => c.name === column);
+}
+
+if (!hasColumn("channels", "subscribed")) {
+  db.exec("ALTER TABLE channels ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 1");
+}
 
 /** Resets rows orphaned by an unclean shutdown so the queue can pick them back up. */
 export function recoverStuckDownloads(): void {

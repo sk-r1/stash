@@ -9,6 +9,8 @@ export interface ChannelRow {
   thumbnail_url: string | null;
   audio_only: 0 | 1;
   created_at: string;
+  /** 1 = a real subscription added via Channel Management; 0 = auto-created as the uploader of a single video added by URL. */
+  subscribed: 0 | 1;
 }
 
 export interface VideoRow {
