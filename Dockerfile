@@ -20,6 +20,10 @@ FROM node:20-alpine AS final
 RUN apk add --no-cache ffmpeg python3 py3-pip curl \
     && pip install --no-cache-dir --break-system-packages yt-dlp
 
+# yt-dlp needs a JS runtime to solve YouTube's signature/nsig challenges for
+# some formats; without one, extraction can fail or hang for those videos.
+COPY --from=denoland/deno:bin /deno /usr/local/bin/deno
+
 WORKDIR /app
 COPY --from=backend-build /app/backend/dist ./backend/dist
 COPY --from=backend-build /app/backend/node_modules ./backend/node_modules
