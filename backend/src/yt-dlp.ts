@@ -180,6 +180,7 @@ export function startDownload(
     options.outputTemplate,
     "--no-playlist",
     "--newline",
+    "--progress",
     "--print",
     "after_move:filepath",
     ...sponsorBlockArgs(options.sponsorblockEnabled),
