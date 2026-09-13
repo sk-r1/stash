@@ -193,8 +193,7 @@ export function startDownload(
   let stderr = "";
   let filePath: string | null = null;
 
-  const rl = readline.createInterface({ input: child.stdout });
-  rl.on("line", (line) => {
+  function handleStdoutLine(line: string): void {
     const match = PROGRESS_RE.exec(line);
     if (match) {
       handlers.onProgress({
@@ -208,7 +207,24 @@ export function startDownload(
       // yt-dlp's own status messages which are always bracket-prefixed.
       filePath = line.trim();
     }
-  });
+  }
+
+  // Depending on version/config, yt-dlp's progress line can land on stdout or
+  // stderr — listen on both rather than gamble on which one this build uses.
+  function handleStderrLine(line: string): void {
+    const match = PROGRESS_RE.exec(line);
+    if (match) {
+      handlers.onProgress({
+        percent: parseFloat(match[1]),
+        totalSize: match[2],
+        speed: match[3],
+        eta: match[4],
+      });
+    }
+  }
+
+  readline.createInterface({ input: child.stdout }).on("line", handleStdoutLine);
+  readline.createInterface({ input: child.stderr }).on("line", handleStderrLine);
 
   child.stderr.on("data", (chunk) => {
     stderr += chunk;
