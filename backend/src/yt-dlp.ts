@@ -193,7 +193,12 @@ export function startDownload(
   let stderr = "";
   let filePath: string | null = null;
 
+  // child_process pipes never reach `docker logs` on their own — only what
+  // this Node process itself writes to console does. Echoing every raw line
+  // (temporarily; safe to remove once progress parsing is confirmed working)
+  // is the only way to see yt-dlp's actual output format from the container.
   function handleStdoutLine(line: string): void {
+    console.log(`[yt-dlp stdout] ${line}`);
     const match = PROGRESS_RE.exec(line);
     if (match) {
       handlers.onProgress({
@@ -212,6 +217,7 @@ export function startDownload(
   // Depending on version/config, yt-dlp's progress line can land on stdout or
   // stderr — listen on both rather than gamble on which one this build uses.
   function handleStderrLine(line: string): void {
+    console.log(`[yt-dlp stderr] ${line}`);
     const match = PROGRESS_RE.exec(line);
     if (match) {
       handlers.onProgress({
