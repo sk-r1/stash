@@ -11,6 +11,7 @@ export const de = {
   library_filter_all_channels: "Alle Kanäle",
   library_filter_all_status: "Alle Status",
   library_filter_all_tags: "Alle Tags",
+  library_filter_all_categories: "Alle Kategorien",
   library_sort_date: "Datum",
   library_sort_name: "Name",
   library_sort_channel: "Kanal",
@@ -19,6 +20,17 @@ export const de = {
   library_delete: "Löschen",
   library_play: "Abspielen",
   library_play_hint: "Öffnet die Videodatei im Browser. Der Link lässt sich auch in VLC unter „Netzwerkstream öffnen“ einfügen.",
+  library_audio_only_badge: "Nur Audio",
+  library_youtube_link: "Original auf YouTube ansehen",
+
+  category_editor_label: "Kategorien",
+  category_none_defined: "Noch keine Kategorien angelegt (siehe Einstellungen).",
+  common_done: "Fertig",
+
+  settings_categories_title: "Kategorien verwalten",
+  settings_categories_placeholder: "Neue Kategorie…",
+  settings_categories_add: "Hinzufügen",
+  settings_categories_empty: "Noch keine Kategorien.",
 
   status_pending: "Ausstehend",
   status_downloading: "Lädt herunter",
@@ -66,6 +78,7 @@ export const en: typeof de = {
   library_filter_all_channels: "All channels",
   library_filter_all_status: "All statuses",
   library_filter_all_tags: "All tags",
+  library_filter_all_categories: "All categories",
   library_sort_date: "Date",
   library_sort_name: "Name",
   library_sort_channel: "Channel",
@@ -74,6 +87,17 @@ export const en: typeof de = {
   library_delete: "Delete",
   library_play: "Play",
   library_play_hint: "Opens the video file in the browser. The same link can be pasted into VLC's \"Open Network Stream\".",
+  library_audio_only_badge: "Audio only",
+  library_youtube_link: "View original on YouTube",
+
+  category_editor_label: "Categories",
+  category_none_defined: "No categories defined yet (see Settings).",
+  common_done: "Done",
+
+  settings_categories_title: "Manage categories",
+  settings_categories_placeholder: "New category…",
+  settings_categories_add: "Add",
+  settings_categories_empty: "No categories yet.",
 
   status_pending: "Pending",
   status_downloading: "Downloading",

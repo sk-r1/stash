@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSettings } from "../SettingsContext";
-import { api } from "../api";
+import { api, Category } from "../api";
 import { RefreshIcon, DownloadsIcon, SunIcon, MoonIcon } from "../components/Icons";
+import { CategoryManager } from "../components/CategoryManager";
 import { useTranslation } from "../i18n/I18nContext";
 
 export function SettingsPage() {
@@ -9,6 +10,13 @@ export function SettingsPage() {
   const { t } = useTranslation();
   const [versionMessage, setVersionMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  function refreshCategories() {
+    api.getCategories().then(setCategories).catch(() => {});
+  }
+
+  useEffect(refreshCategories, []);
 
   if (!settings) return null;
 
@@ -34,6 +42,21 @@ export function SettingsPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleAddCategory(name: string) {
+    await api.createCategory(name);
+    refreshCategories();
+  }
+
+  async function handleRenameCategory(id: number, name: string) {
+    await api.renameCategory(id, name);
+    refreshCategories();
+  }
+
+  async function handleDeleteCategory(id: number) {
+    await api.deleteCategory(id);
+    refreshCategories();
   }
 
   return (
@@ -93,7 +116,17 @@ export function SettingsPage() {
             <DownloadsIcon size={14} /> {t("settings_update")}
           </button>
         </div>
+      </div>
 
+      <h3 className="settings-subheading">{t("settings_categories_title")}</h3>
+      <CategoryManager
+        categories={categories}
+        onAdd={handleAddCategory}
+        onRename={handleRenameCategory}
+        onDelete={handleDeleteCategory}
+      />
+
+      <div className="settings-section" style={{ marginTop: "1.5rem" }}>
         <a className="btn btn-secondary" href={api.backupDatabaseUrl} style={{ textAlign: "center", textDecoration: "none" }}>
           <DownloadsIcon size={14} /> {t("settings_backup")}
         </a>

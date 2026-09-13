@@ -148,6 +148,7 @@ router.get("/", (_req, res) => {
   const withProgress = rows.map((row) => ({
     ...row,
     tags: parseTags(row.tags),
+    categories: [] as { id: number; name: string }[], // not worth joining here; downloads aren't category-editable
     progress: row.status === "downloading" ? progress.get(row.id) || null : null,
   }));
   res.json(withProgress);

@@ -27,14 +27,34 @@ function parseTags(tags: string | null): string[] {
   }
 }
 
+const getCategoriesForVideoStmt = db.prepare(`
+  SELECT c.id, c.name FROM video_categories vc
+  JOIN categories c ON c.id = vc.category_id
+  WHERE vc.video_id = ?
+  ORDER BY c.name COLLATE NOCASE
+`);
+
+function getCategoriesForVideo(videoId: number): { id: number; name: string }[] {
+  return getCategoriesForVideoStmt.all(videoId) as { id: number; name: string }[];
+}
+
 function toClientVideo(row: VideoRow & { channel_name?: string }) {
-  return { ...row, stream_url: toStreamUrl(row.video_file_path), tags: parseTags(row.tags) };
+  return {
+    ...row,
+    stream_url: toStreamUrl(row.video_file_path),
+    tags: parseTags(row.tags),
+    categories: getCategoriesForVideo(row.id),
+  };
 }
 
 const getVideoStmt = db.prepare("SELECT * FROM videos WHERE id = ?");
 const getVideoByYoutubeIdStmt = db.prepare("SELECT * FROM videos WHERE youtube_id = ?");
 const deleteVideoStmt = db.prepare("DELETE FROM videos WHERE id = ?");
 const updateTagsStmt = db.prepare("UPDATE videos SET tags = ? WHERE id = ?");
+const deleteVideoCategoriesStmt = db.prepare("DELETE FROM video_categories WHERE video_id = ?");
+const insertVideoCategoryStmt = db.prepare(
+  "INSERT OR IGNORE INTO video_categories (video_id, category_id) VALUES (?, ?)"
+);
 
 const getChannelByUrlStmt = db.prepare("SELECT * FROM channels WHERE url = ?");
 const getChannelByIdStmt = db.prepare("SELECT * FROM channels WHERE id = ?");
@@ -54,7 +74,10 @@ const SORT_COLUMNS: Record<string, string> = {
 };
 
 router.get("/", (req, res) => {
-  const { status, channel_id, search, sort, tag } = req.query as Record<string, string | undefined>;
+  const { status, channel_id, search, sort, tag, category_id } = req.query as Record<
+    string,
+    string | undefined
+  >;
 
   const clauses: string[] = [];
   const params: Record<string, unknown> = {};
@@ -70,6 +93,10 @@ router.get("/", (req, res) => {
   if (search) {
     clauses.push("v.title LIKE @search");
     params.search = `%${search}%`;
+  }
+  if (category_id) {
+    clauses.push("v.id IN (SELECT video_id FROM video_categories WHERE category_id = @category_id)");
+    params.category_id = category_id;
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
@@ -96,20 +123,36 @@ router.get("/tags", (_req, res) => {
   res.json([...all].sort((a, b) => a.localeCompare(b)));
 });
 
-/** Updates a video's tags. */
+/** Updates a video's tags and/or category assignments. */
 router.put("/:id", (req, res) => {
   const video = getVideoStmt.get(req.params.id) as VideoRow | undefined;
   if (!video) {
     res.status(404).json({ error: "Video not found" });
     return;
   }
-  const { tags } = req.body as { tags?: string[] };
-  if (!Array.isArray(tags)) {
-    res.status(400).json({ error: "tags must be an array of strings" });
-    return;
+  const { tags, category_ids } = req.body as { tags?: string[]; category_ids?: number[] };
+
+  if (tags !== undefined) {
+    if (!Array.isArray(tags)) {
+      res.status(400).json({ error: "tags must be an array of strings" });
+      return;
+    }
+    const cleaned = [...new Set(tags.map((t) => t.trim()).filter(Boolean))];
+    updateTagsStmt.run(JSON.stringify(cleaned), video.id);
   }
-  const cleaned = [...new Set(tags.map((t) => t.trim()).filter(Boolean))];
-  updateTagsStmt.run(JSON.stringify(cleaned), video.id);
+
+  if (category_ids !== undefined) {
+    if (!Array.isArray(category_ids)) {
+      res.status(400).json({ error: "category_ids must be an array of numbers" });
+      return;
+    }
+    const setCategories = db.transaction((ids: number[]) => {
+      deleteVideoCategoriesStmt.run(video.id);
+      for (const id of ids) insertVideoCategoryStmt.run(video.id, id);
+    });
+    setCategories(category_ids);
+  }
+
   res.json(toClientVideo(getVideoStmt.get(video.id) as VideoRow));
 });
 

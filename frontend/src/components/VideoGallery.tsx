@@ -1,16 +1,26 @@
-import { Video } from "../api";
+import { Category, Video } from "../api";
 import { VideoCard } from "./VideoCard";
 import { useTranslation } from "../i18n/I18nContext";
 
 interface Props {
   videos: Video[];
   selectedIds: Set<number>;
+  allCategories: Category[];
   onToggleSelect: (id: number) => void;
   onDelete: (id: number) => void;
   onSaveTags: (id: number, tags: string[]) => Promise<void>;
+  onSaveCategories: (id: number, categoryIds: number[]) => Promise<void>;
 }
 
-export function VideoGallery({ videos, selectedIds, onToggleSelect, onDelete, onSaveTags }: Props) {
+export function VideoGallery({
+  videos,
+  selectedIds,
+  allCategories,
+  onToggleSelect,
+  onDelete,
+  onSaveTags,
+  onSaveCategories,
+}: Props) {
   const { t } = useTranslation();
 
   if (videos.length === 0) {
@@ -24,9 +34,11 @@ export function VideoGallery({ videos, selectedIds, onToggleSelect, onDelete, on
           key={video.id}
           video={video}
           selected={selectedIds.has(video.id)}
+          allCategories={allCategories}
           onToggleSelect={onToggleSelect}
           onDelete={onDelete}
           onSaveTags={onSaveTags}
+          onSaveCategories={onSaveCategories}
         />
       ))}
     </div>

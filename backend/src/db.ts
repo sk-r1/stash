@@ -57,6 +57,20 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name ON categories(name COLLATE NOCASE);
+
+  CREATE TABLE IF NOT EXISTS video_categories (
+    video_id INTEGER NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    PRIMARY KEY (video_id, category_id)
+  );
 `);
 
 // CREATE TABLE IF NOT EXISTS is a no-op on a table that already exists, so a

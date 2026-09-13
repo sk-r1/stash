@@ -1,4 +1,4 @@
-import { Channel } from "../api";
+import { Category, Channel } from "../api";
 import { useTranslation } from "../i18n/I18nContext";
 
 export interface VideoFilters {
@@ -7,16 +7,18 @@ export interface VideoFilters {
   search: string;
   sort: string;
   tag: string;
+  category_id: string;
 }
 
 interface Props {
   channels: Channel[];
   tags: string[];
+  categories: Category[];
   filters: VideoFilters;
   onChange: (filters: VideoFilters) => void;
 }
 
-export function FilterBar({ channels, tags, filters, onChange }: Props) {
+export function FilterBar({ channels, tags, categories, filters, onChange }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -45,6 +47,19 @@ export function FilterBar({ channels, tags, filters, onChange }: Props) {
         <option value="completed">{t("status_completed")}</option>
         <option value="error">{t("status_error")}</option>
       </select>
+      {categories.length > 0 && (
+        <select
+          value={filters.category_id}
+          onChange={(e) => onChange({ ...filters, category_id: e.target.value })}
+        >
+          <option value="">{t("library_filter_all_categories")}</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      )}
       {tags.length > 0 && (
         <select value={filters.tag} onChange={(e) => onChange({ ...filters, tag: e.target.value })}>
           <option value="">{t("library_filter_all_tags")}</option>

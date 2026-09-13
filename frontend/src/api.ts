@@ -18,6 +18,12 @@ export interface DownloadProgress {
   eta: string | null;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
 export interface Video {
   id: number;
   channel_id: number;
@@ -40,6 +46,7 @@ export interface Video {
   progress?: DownloadProgress | null;
   stream_url?: string | null;
   tags: string[];
+  categories: Category[];
 }
 
 export interface ChannelVideoPreview {
@@ -98,20 +105,37 @@ export const api = {
       body: JSON.stringify({ url, audio_only: audioOnly }),
     }),
 
-  getVideos: (filters: { status?: string; channel_id?: number; search?: string; sort?: string; tag?: string }) => {
+  getVideos: (filters: {
+    status?: string;
+    channel_id?: number;
+    search?: string;
+    sort?: string;
+    tag?: string;
+    category_id?: number;
+  }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set("status", filters.status);
     if (filters.channel_id) params.set("channel_id", String(filters.channel_id));
     if (filters.search) params.set("search", filters.search);
     if (filters.sort) params.set("sort", filters.sort);
     if (filters.tag) params.set("tag", filters.tag);
+    if (filters.category_id) params.set("category_id", String(filters.category_id));
     const qs = params.toString();
     return request<Video[]>(`/api/videos${qs ? `?${qs}` : ""}`);
   },
   deleteVideo: (id: number) => request<void>(`/api/videos/${id}`, { method: "DELETE" }),
   updateVideoTags: (id: number, tags: string[]) =>
     request<Video>(`/api/videos/${id}`, { method: "PUT", body: JSON.stringify({ tags }) }),
+  updateVideoCategories: (id: number, categoryIds: number[]) =>
+    request<Video>(`/api/videos/${id}`, { method: "PUT", body: JSON.stringify({ category_ids: categoryIds }) }),
   getAllTags: () => request<string[]>("/api/videos/tags"),
+
+  getCategories: () => request<Category[]>("/api/categories"),
+  createCategory: (name: string) =>
+    request<Category>("/api/categories", { method: "POST", body: JSON.stringify({ name }) }),
+  renameCategory: (id: number, name: string) =>
+    request<Category>(`/api/categories/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  deleteCategory: (id: number) => request<void>(`/api/categories/${id}`, { method: "DELETE" }),
 
   getDownloads: () => request<Video[]>("/api/downloads"),
   batchDownload: (videoIds: number[], audioOnly?: boolean) =>

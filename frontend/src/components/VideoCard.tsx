@@ -1,15 +1,18 @@
-import { Video } from "../api";
+import { Category, Video } from "../api";
 import { StatusBadge } from "./StatusBadge";
 import { TagEditor } from "./TagEditor";
-import { PlayIcon, TrashIcon } from "./Icons";
+import { CategoryEditor } from "./CategoryEditor";
+import { PlayIcon, TrashIcon, HeadphonesIcon, ExternalLinkIcon } from "./Icons";
 import { useTranslation } from "../i18n/I18nContext";
 
 interface Props {
   video: Video;
   selected: boolean;
+  allCategories: Category[];
   onToggleSelect: (id: number) => void;
   onDelete: (id: number) => void;
   onSaveTags: (id: number, tags: string[]) => Promise<void>;
+  onSaveCategories: (id: number, categoryIds: number[]) => Promise<void>;
 }
 
 function formatBitrate(bps: number | null): string {
@@ -17,7 +20,15 @@ function formatBitrate(bps: number | null): string {
   return `${Math.round(bps / 1000)} kbps`;
 }
 
-export function VideoCard({ video, selected, onToggleSelect, onDelete, onSaveTags }: Props) {
+export function VideoCard({
+  video,
+  selected,
+  allCategories,
+  onToggleSelect,
+  onDelete,
+  onSaveTags,
+  onSaveCategories,
+}: Props) {
   const { t } = useTranslation();
   return (
     <div className="card video-card">
@@ -34,10 +45,25 @@ export function VideoCard({ video, selected, onToggleSelect, onDelete, onSaveTag
       <div className="title" title={video.title}>
         {video.title}
       </div>
-      <div className="meta">{video.channel_name}</div>
+      <div className="meta video-card-source">
+        <span>{video.channel_name}</span>
+        <a href={video.url} target="_blank" rel="noopener noreferrer" title={t("library_youtube_link")}>
+          <ExternalLinkIcon size={12} /> YouTube
+        </a>
+      </div>
       <div className="meta">
         {video.resolution || "—"} · {formatBitrate(video.audio_bitrate)}
+        {!!video.audio_only && (
+          <span className="audio-only-badge">
+            <HeadphonesIcon size={12} /> {t("library_audio_only_badge")}
+          </span>
+        )}
       </div>
+      <CategoryEditor
+        assigned={video.categories}
+        allCategories={allCategories}
+        onSave={(ids) => onSaveCategories(video.id, ids)}
+      />
       <TagEditor tags={video.tags} onSave={(tags) => onSaveTags(video.id, tags)} />
       {video.status === "error" && video.error_message && (
         <div className="error-text">{video.error_message}</div>

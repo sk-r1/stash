@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "../i18n/I18nContext";
-import { DownloadsIcon } from "./Icons";
+import { DownloadsIcon, HeadphonesIcon } from "./Icons";
 
 interface Props {
-  onAdd: (url: string) => Promise<void>;
+  onAdd: (url: string, audioOnly: boolean) => Promise<void>;
 }
 
 export function VideoUrlForm({ onAdd }: Props) {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
+  const [audioOnly, setAudioOnly] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +19,7 @@ export function VideoUrlForm({ onAdd }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      await onAdd(url.trim());
+      await onAdd(url.trim(), audioOnly);
       setUrl("");
     } catch (err) {
       setError((err as Error).message);
@@ -28,7 +29,7 @@ export function VideoUrlForm({ onAdd }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card" style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+    <form onSubmit={handleSubmit} className="card" style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "1rem" }}>
       <input
         type="text"
         value={url}
@@ -36,6 +37,10 @@ export function VideoUrlForm({ onAdd }: Props) {
         placeholder={t("video_url_placeholder")}
         style={{ flex: 1 }}
       />
+      <label className="audio-only-toggle">
+        <input type="checkbox" checked={audioOnly} onChange={(e) => setAudioOnly(e.target.checked)} />
+        <HeadphonesIcon /> {t("channels_audio_only")}
+      </label>
       <button className="btn" type="submit" disabled={submitting}>
         <DownloadsIcon size={16} /> {t("video_url_download")}
       </button>

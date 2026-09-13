@@ -6,6 +6,7 @@ import channelsRouter from "./routes/channels";
 import videosRouter from "./routes/videos";
 import downloadsRouter, { resumeQueuedDownloads } from "./routes/downloads";
 import settingsRouter from "./routes/settings";
+import categoriesRouter from "./routes/categories";
 
 const BACKEND_PORT = Number(process.env.BACKEND_PORT) || 3001;
 const FRONTEND_PORT = Number(process.env.FRONTEND_PORT) || 3000;
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use("/api/channels", channelsRouter);
 app.use("/api/videos", videosRouter);
 app.use("/api/downloads", downloadsRouter);
+app.use("/api/categories", categoriesRouter);
 app.use("/api", settingsRouter);
 
 // Serves downloaded files directly (range-request support built in) so a video
