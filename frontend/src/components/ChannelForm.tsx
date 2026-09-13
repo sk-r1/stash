@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "../i18n/I18nContext";
+import { PlusIcon } from "./Icons";
 
 export function ChannelForm({ onAdd }: { onAdd: (url: string) => Promise<void> }) {
   const { t } = useTranslation();
@@ -32,7 +33,7 @@ export function ChannelForm({ onAdd }: { onAdd: (url: string) => Promise<void> }
         style={{ flex: 1 }}
       />
       <button className="btn" type="submit" disabled={submitting}>
-        {t("channels_add_button")}
+        <PlusIcon /> {t("channels_add_button")}
       </button>
       {error && <p className="error-text">{error}</p>}
     </form>

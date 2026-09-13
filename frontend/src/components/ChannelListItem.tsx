@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Channel, ChannelVideoPreview } from "../api";
 import { ChannelVideoPicker } from "./ChannelVideoPicker";
+import { RefreshIcon, HeadphonesIcon, TrashIcon } from "./Icons";
 import { useTranslation } from "../i18n/I18nContext";
 
 interface Props {
@@ -51,21 +52,21 @@ export function ChannelListItem({ channel, onFetch, onDownload, onToggleAudioOnl
         <div className="grow">
           <div style={{ fontWeight: 600 }}>{channel.name}</div>
           <div className="meta">{channel.url}</div>
-          {message && <div className={message.isError ? "error-text" : "meta"}>{message.text}</div>}
+          {message && <div className={`inline-notice ${message.isError ? "error" : "info"}`}>{message.text}</div>}
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+        <label className="audio-only-toggle">
           <input
             type="checkbox"
             checked={!!channel.audio_only}
             onChange={(e) => onToggleAudioOnly(channel.id, e.target.checked)}
           />
-          {t("channels_audio_only")}
+          <HeadphonesIcon /> {t("channels_audio_only")}
         </label>
         <button className="btn btn-secondary" onClick={handleFetch} disabled={fetching}>
-          {fetching ? t("common_loading") : t("channels_fetch_button")}
+          <RefreshIcon /> {fetching ? t("common_loading") : t("channels_fetch_button")}
         </button>
         <button className="btn btn-secondary" onClick={() => onDelete(channel.id)}>
-          {t("channels_delete")}
+          <TrashIcon /> {t("channels_delete")}
         </button>
       </div>
       {foundVideos && (

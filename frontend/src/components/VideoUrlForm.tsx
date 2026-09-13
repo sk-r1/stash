@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "../i18n/I18nContext";
+import { DownloadsIcon } from "./Icons";
 
 interface Props {
   onAdd: (url: string) => Promise<void>;
@@ -36,7 +37,7 @@ export function VideoUrlForm({ onAdd }: Props) {
         style={{ flex: 1 }}
       />
       <button className="btn" type="submit" disabled={submitting}>
-        {t("video_url_download")}
+        <DownloadsIcon size={16} /> {t("video_url_download")}
       </button>
       {error && <p className="error-text">{error}</p>}
     </form>

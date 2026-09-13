@@ -7,9 +7,10 @@ interface Props {
   selectedIds: Set<number>;
   onToggleSelect: (id: number) => void;
   onDelete: (id: number) => void;
+  onSaveTags: (id: number, tags: string[]) => Promise<void>;
 }
 
-export function VideoGallery({ videos, selectedIds, onToggleSelect, onDelete }: Props) {
+export function VideoGallery({ videos, selectedIds, onToggleSelect, onDelete, onSaveTags }: Props) {
   const { t } = useTranslation();
 
   if (videos.length === 0) {
@@ -25,6 +26,7 @@ export function VideoGallery({ videos, selectedIds, onToggleSelect, onDelete }: 
           selected={selectedIds.has(video.id)}
           onToggleSelect={onToggleSelect}
           onDelete={onDelete}
+          onSaveTags={onSaveTags}
         />
       ))}
     </div>

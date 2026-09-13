@@ -17,9 +17,24 @@ function toStreamUrl(filePath: string | null): string | null {
   return "/media/" + rel.split(path.sep).map(encodeURIComponent).join("/");
 }
 
+function parseTags(tags: string | null): string[] {
+  if (!tags) return [];
+  try {
+    const parsed = JSON.parse(tags);
+    return Array.isArray(parsed) ? parsed.filter((t) => typeof t === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function toClientVideo(row: VideoRow & { channel_name?: string }) {
+  return { ...row, stream_url: toStreamUrl(row.video_file_path), tags: parseTags(row.tags) };
+}
+
 const getVideoStmt = db.prepare("SELECT * FROM videos WHERE id = ?");
 const getVideoByYoutubeIdStmt = db.prepare("SELECT * FROM videos WHERE youtube_id = ?");
 const deleteVideoStmt = db.prepare("DELETE FROM videos WHERE id = ?");
+const updateTagsStmt = db.prepare("UPDATE videos SET tags = ? WHERE id = ?");
 
 const getChannelByUrlStmt = db.prepare("SELECT * FROM channels WHERE url = ?");
 const getChannelByIdStmt = db.prepare("SELECT * FROM channels WHERE id = ?");
@@ -39,7 +54,7 @@ const SORT_COLUMNS: Record<string, string> = {
 };
 
 router.get("/", (req, res) => {
-  const { status, channel_id, search, sort } = req.query as Record<string, string | undefined>;
+  const { status, channel_id, search, sort, tag } = req.query as Record<string, string | undefined>;
 
   const clauses: string[] = [];
   const params: Record<string, unknown> = {};
@@ -69,7 +84,33 @@ router.get("/", (req, res) => {
     )
     .all(params) as VideoRow[];
 
-  res.json(rows.map((row) => ({ ...row, stream_url: toStreamUrl(row.video_file_path) })));
+  const withTags = rows.map(toClientVideo);
+  res.json(tag ? withTags.filter((v) => v.tags.includes(tag)) : withTags);
+});
+
+/** All distinct tags currently in use, for the Library's tag filter dropdown. */
+router.get("/tags", (_req, res) => {
+  const rows = db.prepare("SELECT tags FROM videos WHERE tags IS NOT NULL").all() as { tags: string }[];
+  const all = new Set<string>();
+  for (const row of rows) for (const tag of parseTags(row.tags)) all.add(tag);
+  res.json([...all].sort((a, b) => a.localeCompare(b)));
+});
+
+/** Updates a video's tags. */
+router.put("/:id", (req, res) => {
+  const video = getVideoStmt.get(req.params.id) as VideoRow | undefined;
+  if (!video) {
+    res.status(404).json({ error: "Video not found" });
+    return;
+  }
+  const { tags } = req.body as { tags?: string[] };
+  if (!Array.isArray(tags)) {
+    res.status(400).json({ error: "tags must be an array of strings" });
+    return;
+  }
+  const cleaned = [...new Set(tags.map((t) => t.trim()).filter(Boolean))];
+  updateTagsStmt.run(JSON.stringify(cleaned), video.id);
+  res.json(toClientVideo(getVideoStmt.get(video.id) as VideoRow));
 });
 
 /** Adds a single video by URL (auto-discovering/reusing its channel) and immediately queues it. */
@@ -95,7 +136,7 @@ router.post("/", async (req, res) => {
       return;
     }
     enqueueVideoForDownload(existingVideo.id, audio_only);
-    res.status(202).json(getVideoStmt.get(existingVideo.id));
+    res.status(202).json(toClientVideo(getVideoStmt.get(existingVideo.id) as VideoRow));
     return;
   }
 
@@ -134,7 +175,7 @@ router.post("/", async (req, res) => {
   }
 
   enqueueVideoForDownload(videoId as number, audio_only);
-  res.status(202).json(getVideoStmt.get(videoId));
+  res.status(202).json(toClientVideo(getVideoStmt.get(videoId) as VideoRow));
 });
 
 router.delete("/:id", (req, res) => {

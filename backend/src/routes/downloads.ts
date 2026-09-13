@@ -133,10 +133,21 @@ export function enqueueVideoForDownload(videoId: number, audioOnly?: boolean): b
   return true;
 }
 
+function parseTags(tags: string | null): string[] {
+  if (!tags) return [];
+  try {
+    const parsed = JSON.parse(tags);
+    return Array.isArray(parsed) ? parsed.filter((t) => typeof t === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 router.get("/", (_req, res) => {
   const rows = downloadsQueueViewStmt.all() as VideoRow[];
   const withProgress = rows.map((row) => ({
     ...row,
+    tags: parseTags(row.tags),
     progress: row.status === "downloading" ? progress.get(row.id) || null : null,
   }));
   res.json(withProgress);

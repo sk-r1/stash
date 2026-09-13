@@ -6,19 +6,25 @@ import { VideoGallery } from "../components/VideoGallery";
 import { VideoUrlForm } from "../components/VideoUrlForm";
 import { useTranslation } from "../i18n/I18nContext";
 
-const DEFAULT_FILTERS: VideoFilters = { status: "", channel_id: "", search: "", sort: "date" };
+const DEFAULT_FILTERS: VideoFilters = { status: "", channel_id: "", search: "", sort: "date", tag: "" };
 
 export function LibraryView() {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<VideoFilters>(DEFAULT_FILTERS);
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   function refreshChannels() {
     api.getChannels().then(setChannels).catch(() => {});
   }
 
+  function refreshTags() {
+    api.getAllTags().then(setTags).catch(() => {});
+  }
+
   useEffect(refreshChannels, []);
+  useEffect(refreshTags, []);
 
   const fetchVideos = useMemo(
     () => () =>
@@ -27,8 +33,9 @@ export function LibraryView() {
         channel_id: filters.channel_id ? Number(filters.channel_id) : undefined,
         search: filters.search || undefined,
         sort: filters.sort,
+        tag: filters.tag || undefined,
       }),
-    [filters.status, filters.channel_id, filters.search, filters.sort]
+    [filters.status, filters.channel_id, filters.search, filters.sort, filters.tag]
   );
 
   const { data: videos, error, refresh } = usePolling(fetchVideos, 3000, [
@@ -36,6 +43,7 @@ export function LibraryView() {
     filters.channel_id,
     filters.search,
     filters.sort,
+    filters.tag,
   ]);
 
   function toggleSelect(id: number) {
@@ -70,11 +78,17 @@ export function LibraryView() {
     refreshChannels();
   }
 
+  async function handleSaveTags(id: number, videoTags: string[]) {
+    await api.updateVideoTags(id, videoTags);
+    refresh();
+    refreshTags();
+  }
+
   return (
     <div>
       <h2>{t("nav_library")}</h2>
       <VideoUrlForm onAdd={handleAddVideoUrl} />
-      <FilterBar channels={channels} filters={filters} onChange={setFilters} />
+      <FilterBar channels={channels} tags={tags} filters={filters} onChange={setFilters} />
       {selectedIds.size > 0 && (
         <button className="btn" style={{ marginTop: "1rem" }} onClick={handleDownloadSelected}>
           {t("library_download_selected")} ({selectedIds.size})
@@ -86,6 +100,7 @@ export function LibraryView() {
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
         onDelete={handleDelete}
+        onSaveTags={handleSaveTags}
       />
     </div>
   );

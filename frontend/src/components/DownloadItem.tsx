@@ -1,5 +1,6 @@
 import { Video } from "../api";
 import { StatusBadge } from "./StatusBadge";
+import { XIcon } from "./Icons";
 import { useTranslation } from "../i18n/I18nContext";
 
 interface Props {
@@ -35,7 +36,7 @@ export function DownloadItem({ video, onCancel }: Props) {
       )}
       {video.status === "downloading" && (
         <button className="btn btn-secondary" style={{ marginTop: "0.5rem" }} onClick={() => onCancel(video.id)}>
-          {t("downloads_cancel")}
+          <XIcon size={14} /> {t("downloads_cancel")}
         </button>
       )}
     </div>

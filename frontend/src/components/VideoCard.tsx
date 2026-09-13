@@ -1,5 +1,7 @@
 import { Video } from "../api";
 import { StatusBadge } from "./StatusBadge";
+import { TagEditor } from "./TagEditor";
+import { PlayIcon, TrashIcon } from "./Icons";
 import { useTranslation } from "../i18n/I18nContext";
 
 interface Props {
@@ -7,6 +9,7 @@ interface Props {
   selected: boolean;
   onToggleSelect: (id: number) => void;
   onDelete: (id: number) => void;
+  onSaveTags: (id: number, tags: string[]) => Promise<void>;
 }
 
 function formatBitrate(bps: number | null): string {
@@ -14,7 +17,7 @@ function formatBitrate(bps: number | null): string {
   return `${Math.round(bps / 1000)} kbps`;
 }
 
-export function VideoCard({ video, selected, onToggleSelect, onDelete }: Props) {
+export function VideoCard({ video, selected, onToggleSelect, onDelete, onSaveTags }: Props) {
   const { t } = useTranslation();
   return (
     <div className="card video-card">
@@ -35,10 +38,11 @@ export function VideoCard({ video, selected, onToggleSelect, onDelete }: Props) 
       <div className="meta">
         {video.resolution || "—"} · {formatBitrate(video.audio_bitrate)}
       </div>
+      <TagEditor tags={video.tags} onSave={(tags) => onSaveTags(video.id, tags)} />
       {video.status === "error" && video.error_message && (
         <div className="error-text">{video.error_message}</div>
       )}
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+      <div className="video-card-actions">
         {video.status === "completed" && video.stream_url && (
           <a
             className="btn btn-secondary"
@@ -47,11 +51,11 @@ export function VideoCard({ video, selected, onToggleSelect, onDelete }: Props) 
             rel="noopener noreferrer"
             title={t("library_play_hint")}
           >
-            {t("library_play")}
+            <PlayIcon /> {t("library_play")}
           </a>
         )}
         <button className="btn btn-secondary" onClick={() => onDelete(video.id)}>
-          {t("library_delete")}
+          <TrashIcon /> {t("library_delete")}
         </button>
       </div>
     </div>

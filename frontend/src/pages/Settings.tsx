@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSettings } from "../SettingsContext";
 import { api } from "../api";
+import { RefreshIcon, DownloadsIcon, SunIcon, MoonIcon } from "../components/Icons";
 import { useTranslation } from "../i18n/I18nContext";
 
 export function SettingsPage() {
@@ -48,7 +49,9 @@ export function SettingsPage() {
         </div>
 
         <div className="settings-row">
-          <label>{t("settings_dark_mode")}</label>
+          <label>
+            {settings.dark_mode ? <MoonIcon /> : <SunIcon />} {t("settings_dark_mode")}
+          </label>
           <input
             type="checkbox"
             checked={settings.dark_mode}
@@ -84,15 +87,15 @@ export function SettingsPage() {
 
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button className="btn btn-secondary" onClick={handleCheckUpdate} disabled={busy}>
-            {t("settings_check_update")}
+            <RefreshIcon size={14} /> {t("settings_check_update")}
           </button>
           <button className="btn" onClick={handleUpdate} disabled={busy}>
-            {t("settings_update")}
+            <DownloadsIcon size={14} /> {t("settings_update")}
           </button>
         </div>
 
         <a className="btn btn-secondary" href={api.backupDatabaseUrl} style={{ textAlign: "center", textDecoration: "none" }}>
-          {t("settings_backup")}
+          <DownloadsIcon size={14} /> {t("settings_backup")}
         </a>
       </div>
     </div>

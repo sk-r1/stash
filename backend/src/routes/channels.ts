@@ -88,8 +88,19 @@ router.put("/:id", (req, res) => {
   res.json(getChannelStmt.get(channel.id));
 });
 
+const hasVideosStmt = db.prepare("SELECT 1 FROM videos WHERE channel_id = ? LIMIT 1");
+
 router.delete("/:id", (req, res) => {
-  deleteChannelStmt.run(req.params.id);
+  // Hard-deleting a channel cascades to its videos' DB rows (FK ON DELETE
+  // CASCADE) — fine for an empty channel, but surprising and destructive for
+  // one with actual downloads: "remove this channel" should not silently
+  // wipe a video's library entry. So a channel that still has videos is only
+  // unsubscribed (hidden from Channel Management), not deleted outright.
+  if (hasVideosStmt.get(req.params.id)) {
+    db.prepare("UPDATE channels SET subscribed = 0 WHERE id = ?").run(req.params.id);
+  } else {
+    deleteChannelStmt.run(req.params.id);
+  }
   res.status(204).end();
 });
 

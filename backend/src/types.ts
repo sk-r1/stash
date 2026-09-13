@@ -33,6 +33,8 @@ export interface VideoRow {
   created_at: string;
   /** Internal: distinguishes videos explicitly queued for download from freshly-fetched, unselected ones. */
   queued: 0 | 1;
+  /** JSON-encoded string array, e.g. '["Travel","Desert"]'. Null/empty means no tags. */
+  tags: string | null;
 }
 
 export interface Settings {

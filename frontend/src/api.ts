@@ -39,6 +39,7 @@ export interface Video {
   created_at: string;
   progress?: DownloadProgress | null;
   stream_url?: string | null;
+  tags: string[];
 }
 
 export interface ChannelVideoPreview {
@@ -97,16 +98,20 @@ export const api = {
       body: JSON.stringify({ url, audio_only: audioOnly }),
     }),
 
-  getVideos: (filters: { status?: string; channel_id?: number; search?: string; sort?: string }) => {
+  getVideos: (filters: { status?: string; channel_id?: number; search?: string; sort?: string; tag?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set("status", filters.status);
     if (filters.channel_id) params.set("channel_id", String(filters.channel_id));
     if (filters.search) params.set("search", filters.search);
     if (filters.sort) params.set("sort", filters.sort);
+    if (filters.tag) params.set("tag", filters.tag);
     const qs = params.toString();
     return request<Video[]>(`/api/videos${qs ? `?${qs}` : ""}`);
   },
   deleteVideo: (id: number) => request<void>(`/api/videos/${id}`, { method: "DELETE" }),
+  updateVideoTags: (id: number, tags: string[]) =>
+    request<Video>(`/api/videos/${id}`, { method: "PUT", body: JSON.stringify({ tags }) }),
+  getAllTags: () => request<string[]>("/api/videos/tags"),
 
   getDownloads: () => request<Video[]>("/api/downloads"),
   batchDownload: (videoIds: number[], audioOnly?: boolean) =>

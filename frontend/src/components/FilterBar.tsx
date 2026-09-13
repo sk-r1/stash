@@ -6,15 +6,17 @@ export interface VideoFilters {
   channel_id: string;
   search: string;
   sort: string;
+  tag: string;
 }
 
 interface Props {
   channels: Channel[];
+  tags: string[];
   filters: VideoFilters;
   onChange: (filters: VideoFilters) => void;
 }
 
-export function FilterBar({ channels, filters, onChange }: Props) {
+export function FilterBar({ channels, tags, filters, onChange }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -43,6 +45,16 @@ export function FilterBar({ channels, filters, onChange }: Props) {
         <option value="completed">{t("status_completed")}</option>
         <option value="error">{t("status_error")}</option>
       </select>
+      {tags.length > 0 && (
+        <select value={filters.tag} onChange={(e) => onChange({ ...filters, tag: e.target.value })}>
+          <option value="">{t("library_filter_all_tags")}</option>
+          {tags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
+          ))}
+        </select>
+      )}
       <select value={filters.sort} onChange={(e) => onChange({ ...filters, sort: e.target.value })}>
         <option value="date">{t("library_sort_date")}</option>
         <option value="name">{t("library_sort_name")}</option>

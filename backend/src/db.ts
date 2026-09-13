@@ -45,7 +45,8 @@ db.exec(`
     error_message TEXT,
     downloaded_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    queued INTEGER NOT NULL DEFAULT 0
+    queued INTEGER NOT NULL DEFAULT 0,
+    tags TEXT
   );
 
   CREATE UNIQUE INDEX IF NOT EXISTS idx_videos_youtube_id ON videos(youtube_id);
@@ -67,6 +68,9 @@ function hasColumn(table: string, column: string): boolean {
 
 if (!hasColumn("channels", "subscribed")) {
   db.exec("ALTER TABLE channels ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 1");
+}
+if (!hasColumn("videos", "tags")) {
+  db.exec("ALTER TABLE videos ADD COLUMN tags TEXT");
 }
 
 /** Resets rows orphaned by an unclean shutdown so the queue can pick them back up. */
