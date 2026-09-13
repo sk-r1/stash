@@ -27,7 +27,7 @@ jobs:
         with:
           images: ghcr.io/sk-r1/stash
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=match,pattern=v(.*),group=1
 
       - uses: docker/build-push-action@v6
