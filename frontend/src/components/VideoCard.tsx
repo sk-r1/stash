@@ -13,6 +13,7 @@ interface Props {
   onDelete: (id: number) => void;
   onSaveTags: (id: number, tags: string[]) => Promise<void>;
   onSaveCategories: (id: number, categoryIds: number[]) => Promise<void>;
+  onPlay: (video: Video) => void;
 }
 
 function formatBitrate(bps: number | null): string {
@@ -28,6 +29,7 @@ export function VideoCard({
   onDelete,
   onSaveTags,
   onSaveCategories,
+  onPlay,
 }: Props) {
   const { t } = useTranslation();
   return (
@@ -74,15 +76,9 @@ export function VideoCard({
       )}
       <div className="video-card-actions">
         {video.status === "completed" && video.stream_url && (
-          <a
-            className="btn btn-secondary"
-            href={video.stream_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={t("library_play_hint")}
-          >
+          <button className="btn btn-secondary" onClick={() => onPlay(video)}>
             <PlayIcon /> {t("library_play")}
-          </a>
+          </button>
         )}
         <button className="btn btn-secondary" onClick={() => onDelete(video.id)}>
           <TrashIcon /> {t("library_delete")}

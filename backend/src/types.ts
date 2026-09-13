@@ -42,6 +42,7 @@ export interface Settings {
   dark_mode: boolean;
   max_parallel_downloads: number;
   sponsorblock_enabled: boolean;
+  subtitles_enabled: boolean;
   yt_dlp_version: string | null;
 }
 
@@ -50,6 +51,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dark_mode: false,
   max_parallel_downloads: 1,
   sponsorblock_enabled: false,
+  subtitles_enabled: false,
   yt_dlp_version: null,
 };
 

@@ -75,6 +75,7 @@ function startVideoDownload(videoId: number): void {
       outputTemplate,
       audioOnly: !!video.audio_only,
       sponsorblockEnabled: settings.sponsorblock_enabled,
+      subtitlesEnabled: settings.subtitles_enabled,
     },
     {
       onProgress: (p) => progress.set(videoId, p),

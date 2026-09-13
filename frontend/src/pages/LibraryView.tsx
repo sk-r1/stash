@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, Category, Channel } from "../api";
+import { api, Category, Channel, Video } from "../api";
 import { usePolling } from "../hooks/usePolling";
 import { FilterBar, VideoFilters } from "../components/FilterBar";
 import { VideoGallery } from "../components/VideoGallery";
 import { VideoUrlForm } from "../components/VideoUrlForm";
+import { VideoPlayerModal } from "../components/VideoPlayerModal";
 import { RefreshIcon } from "../components/Icons";
 import { useTranslation } from "../i18n/I18nContext";
 
@@ -23,6 +24,7 @@ export function LibraryView() {
   const [tags, setTags] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
 
   function refreshChannels() {
     api.getChannels().then(setChannels).catch(() => {});
@@ -124,7 +126,15 @@ export function LibraryView() {
         onDelete={handleDelete}
         onSaveTags={handleSaveTags}
         onSaveCategories={handleSaveCategories}
+        onPlay={setPlayingVideo}
       />
+      {playingVideo && playingVideo.stream_url && (
+        <VideoPlayerModal
+          src={playingVideo.stream_url}
+          title={playingVideo.title}
+          onClose={() => setPlayingVideo(null)}
+        />
+      )}
     </div>
   );
 }

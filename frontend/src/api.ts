@@ -62,6 +62,7 @@ export interface Settings {
   dark_mode: boolean;
   max_parallel_downloads: number;
   sponsorblock_enabled: boolean;
+  subtitles_enabled: boolean;
   yt_dlp_version: string | null;
 }
 

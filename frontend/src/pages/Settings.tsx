@@ -104,6 +104,15 @@ export function SettingsPage() {
         </div>
 
         <div className="settings-row">
+          <label>{t("settings_subtitles")}</label>
+          <input
+            type="checkbox"
+            checked={settings.subtitles_enabled}
+            onChange={(e) => update({ subtitles_enabled: e.target.checked })}
+          />
+        </div>
+
+        <div className="settings-row">
           <label>{t("settings_yt_dlp_version")}</label>
           <span>{versionMessage || settings.yt_dlp_version || "—"}</span>
         </div>

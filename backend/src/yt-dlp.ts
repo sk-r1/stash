@@ -155,6 +155,13 @@ export interface DownloadOptions {
   outputTemplate: string;
   audioOnly: boolean;
   sponsorblockEnabled: boolean;
+  subtitlesEnabled: boolean;
+}
+
+function subtitleArgs(enabled: boolean, audioOnly: boolean): string[] {
+  // Embedding subs into an audio-only extraction doesn't make sense.
+  if (!enabled || audioOnly) return [];
+  return ["--write-subs", "--write-auto-subs", "--sub-langs", "en.*,de.*", "--embed-subs"];
 }
 
 export interface DownloadHandlers {
@@ -184,6 +191,7 @@ export function startDownload(
     "--print",
     "after_move:filepath",
     ...sponsorBlockArgs(options.sponsorblockEnabled),
+    ...subtitleArgs(options.subtitlesEnabled, options.audioOnly),
     url,
   ];
 

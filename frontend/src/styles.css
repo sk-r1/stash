@@ -287,6 +287,31 @@ select {
   background: transparent;
 }
 
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  margin: 1rem 0 0.75rem;
+  color: var(--text-muted);
+}
+
+.search-row input {
+  flex: 1;
+  border: none;
+  padding: 0;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.search-row input:focus {
+  outline: none;
+}
+
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -470,4 +495,52 @@ select {
 .category-manager-list .category-chip {
   gap: 0.4rem;
   padding-right: 0.35rem;
+}
+
+.player-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.player-dialog {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 0.75rem;
+  max-width: 960px;
+  width: 100%;
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.player-header .title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.player-external-link:hover {
+  color: var(--accent);
 }

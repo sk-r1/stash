@@ -10,6 +10,7 @@ interface Props {
   onDelete: (id: number) => void;
   onSaveTags: (id: number, tags: string[]) => Promise<void>;
   onSaveCategories: (id: number, categoryIds: number[]) => Promise<void>;
+  onPlay: (video: Video) => void;
 }
 
 export function VideoGallery({
@@ -20,6 +21,7 @@ export function VideoGallery({
   onDelete,
   onSaveTags,
   onSaveCategories,
+  onPlay,
 }: Props) {
   const { t } = useTranslation();
 
@@ -39,6 +41,7 @@ export function VideoGallery({
           onDelete={onDelete}
           onSaveTags={onSaveTags}
           onSaveCategories={onSaveCategories}
+          onPlay={onPlay}
         />
       ))}
     </div>
