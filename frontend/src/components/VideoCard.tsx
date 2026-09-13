@@ -32,7 +32,11 @@ export function VideoCard({
   const { t } = useTranslation();
   return (
     <div className="card video-card">
-      <label style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <label
+        className="video-card-select"
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+        title={t("library_select_hint")}
+      >
         <input
           type="checkbox"
           checked={selected}

@@ -22,6 +22,7 @@ export const de = {
   library_play_hint: "Öffnet die Videodatei im Browser. Der Link lässt sich auch in VLC unter „Netzwerkstream öffnen“ einfügen.",
   library_audio_only_badge: "Nur Audio",
   library_youtube_link: "Original auf YouTube ansehen",
+  library_select_hint: "Für Sammel-Download auswählen",
 
   category_editor_label: "Kategorien",
   category_none_defined: "Noch keine Kategorien angelegt (siehe Einstellungen).",
@@ -89,6 +90,7 @@ export const en: typeof de = {
   library_play_hint: "Opens the video file in the browser. The same link can be pasted into VLC's \"Open Network Stream\".",
   library_audio_only_badge: "Audio only",
   library_youtube_link: "View original on YouTube",
+  library_select_hint: "Select for batch download",
 
   category_editor_label: "Categories",
   category_none_defined: "No categories defined yet (see Settings).",
