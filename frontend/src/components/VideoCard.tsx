@@ -35,13 +35,13 @@ export function VideoCard({
       <label
         className="video-card-select"
         style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
-        title={t("library_select_hint")}
+        title={video.status === "error" ? t("library_retry_hint") : undefined}
       >
         <input
           type="checkbox"
           checked={selected}
           onChange={() => onToggleSelect(video.id)}
-          disabled={video.status === "completed" || video.status === "downloading"}
+          disabled={video.status !== "error"}
         />
         <StatusBadge status={video.status} />
       </label>

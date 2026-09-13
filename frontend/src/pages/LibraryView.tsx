@@ -4,6 +4,7 @@ import { usePolling } from "../hooks/usePolling";
 import { FilterBar, VideoFilters } from "../components/FilterBar";
 import { VideoGallery } from "../components/VideoGallery";
 import { VideoUrlForm } from "../components/VideoUrlForm";
+import { RefreshIcon } from "../components/Icons";
 import { useTranslation } from "../i18n/I18nContext";
 
 const DEFAULT_FILTERS: VideoFilters = {
@@ -111,7 +112,7 @@ export function LibraryView() {
       <FilterBar channels={channels} tags={tags} categories={categories} filters={filters} onChange={setFilters} />
       {selectedIds.size > 0 && (
         <button className="btn" style={{ marginTop: "1rem" }} onClick={handleDownloadSelected}>
-          {t("library_download_selected")} ({selectedIds.size})
+          <RefreshIcon size={14} /> {t("library_retry_selected")} ({selectedIds.size})
         </button>
       )}
       {error && <p className="error-text">{error}</p>}
