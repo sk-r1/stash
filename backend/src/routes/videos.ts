@@ -161,11 +161,20 @@ router.put("/:id", (req, res) => {
       res.status(400).json({ error: "category_ids must be an array of numbers" });
       return;
     }
+    // TEMPORARY diagnostics for a reported filter bug — remove once resolved.
+    console.log(
+      `[category-filter-debug] assigning categories to video id=${video.id} (status=${video.status}): ` +
+        JSON.stringify(category_ids)
+    );
     const setCategories = db.transaction((ids: number[]) => {
       deleteVideoCategoriesStmt.run(video.id);
       for (const id of ids) insertVideoCategoryStmt.run(video.id, id);
     });
     setCategories(category_ids);
+    console.log(
+      `[category-filter-debug] video id=${video.id} now has video_categories rows: ` +
+        JSON.stringify(getCategoriesForVideo(video.id))
+    );
   }
 
   res.json(toClientVideo(getVideoStmt.get(video.id) as VideoRow));
