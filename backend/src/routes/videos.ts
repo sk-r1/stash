@@ -97,6 +97,15 @@ router.get("/", (req, res) => {
   if (category_id) {
     clauses.push("v.id IN (SELECT video_id FROM video_categories WHERE category_id = @category_id)");
     params.category_id = category_id;
+
+    // TEMPORARY diagnostics for a reported filter bug — remove once resolved.
+    const rawRows = db
+      .prepare("SELECT video_id, category_id FROM video_categories WHERE category_id = ?")
+      .all(category_id);
+    console.log(
+      `[category-filter-debug] requested category_id=${JSON.stringify(category_id)} (typeof ${typeof category_id}); ` +
+        `video_categories rows: ${JSON.stringify(rawRows)}`
+    );
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
@@ -110,6 +119,12 @@ router.get("/", (req, res) => {
        ORDER BY ${sortColumn} DESC`
     )
     .all(params) as VideoRow[];
+
+  if (category_id) {
+    console.log(
+      `[category-filter-debug] final query returned video ids: ${rows.map((r) => r.id).join(",")}`
+    );
+  }
 
   const withTags = rows.map(toClientVideo);
   res.json(tag ? withTags.filter((v) => v.tags.includes(tag)) : withTags);
