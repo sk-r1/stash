@@ -87,6 +87,42 @@ if (!hasColumn("videos", "tags")) {
   db.exec("ALTER TABLE videos ADD COLUMN tags TEXT");
 }
 
+// A channel can be reached via more than one valid URL (e.g. /channel/UC... vs
+// /@handle), so matching purely by URL string (as the add-channel and
+// single-video-add flows used to) can create a second row for a channel that
+// already exists — same name, different id, silently splitting that
+// uploader's videos across two "channels" that look identical in the UI.
+// This merges any such duplicates by YouTube's own stable channel_id,
+// keeping the subscribed row (or the oldest one) as the survivor. Safe to
+// run on every boot: once merged, there's nothing left to find next time.
+function mergeDuplicateChannels(): void {
+  const duplicateGroups = db
+    .prepare(
+      `SELECT channel_id FROM channels
+       WHERE channel_id IS NOT NULL
+       GROUP BY channel_id
+       HAVING COUNT(*) > 1`
+    )
+    .all() as { channel_id: string }[];
+
+  const getGroupStmt = db.prepare(
+    "SELECT * FROM channels WHERE channel_id = ? ORDER BY subscribed DESC, id ASC"
+  );
+  const reassignVideosStmt = db.prepare("UPDATE videos SET channel_id = ? WHERE channel_id = ?");
+  const deleteChannelStmt = db.prepare("DELETE FROM channels WHERE id = ?");
+
+  for (const { channel_id } of duplicateGroups) {
+    const rows = getGroupStmt.all(channel_id) as { id: number }[];
+    const [survivor, ...duplicates] = rows;
+    for (const dup of duplicates) {
+      reassignVideosStmt.run(survivor.id, dup.id);
+      deleteChannelStmt.run(dup.id);
+    }
+  }
+}
+
+mergeDuplicateChannels();
+
 /** Resets rows orphaned by an unclean shutdown so the queue can pick them back up. */
 export function recoverStuckDownloads(): void {
   db.prepare(

@@ -57,6 +57,7 @@ const insertVideoCategoryStmt = db.prepare(
 );
 
 const getChannelByUrlStmt = db.prepare("SELECT * FROM channels WHERE url = ?");
+const getChannelByYoutubeChannelIdStmt = db.prepare("SELECT * FROM channels WHERE channel_id = ?");
 const getChannelByIdStmt = db.prepare("SELECT * FROM channels WHERE id = ?");
 const insertChannelStmt = db.prepare(`
   INSERT INTO channels (name, url, channel_id, description, thumbnail_url, audio_only, subscribed)
@@ -207,7 +208,14 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  // A channel can have more than one valid URL (e.g. /channel/UC... vs
+  // /@handle); yt-dlp may resolve a different form here than the one used
+  // when the channel was originally subscribed. Check YouTube's own stable
+  // channel_id too before concluding this is a brand-new channel.
   let channel = getChannelByUrlStmt.get(meta.channelUrl) as ChannelRow | undefined;
+  if (!channel && meta.channelId) {
+    channel = getChannelByYoutubeChannelIdStmt.get(meta.channelId) as ChannelRow | undefined;
+  }
   if (!channel) {
     const info = insertChannelStmt.run({
       name: meta.channelName,

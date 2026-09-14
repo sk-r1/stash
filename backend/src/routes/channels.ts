@@ -12,6 +12,7 @@ const listChannelsStmt = db.prepare(
 );
 const getChannelStmt = db.prepare("SELECT * FROM channels WHERE id = ?");
 const getChannelByUrlStmt = db.prepare("SELECT * FROM channels WHERE url = ?");
+const getChannelByYoutubeChannelIdStmt = db.prepare("SELECT * FROM channels WHERE channel_id = ?");
 const insertChannelStmt = db.prepare(`
   INSERT INTO channels (name, url, channel_id, description, thumbnail_url, audio_only, subscribed)
   VALUES (@name, @url, @channel_id, @description, @thumbnail_url, @audio_only, 1)
@@ -55,6 +56,26 @@ router.post("/", async (req, res) => {
 
   try {
     const meta = await resolveChannel(url);
+
+    // A channel can have more than one valid URL (e.g. /channel/UC... vs
+    // /@handle); the exact-URL check above can miss a channel that already
+    // exists under a different URL form. YouTube's own channel_id is the
+    // stable identifier, so check that too before creating a duplicate row.
+    if (meta.channelId) {
+      const existingByChannelId = getChannelByYoutubeChannelIdStmt.get(meta.channelId) as
+        | ChannelRow
+        | undefined;
+      if (existingByChannelId) {
+        if (existingByChannelId.subscribed) {
+          res.status(409).json({ error: "Channel already added" });
+          return;
+        }
+        markSubscribedStmt.run(existingByChannelId.id);
+        res.status(200).json(getChannelStmt.get(existingByChannelId.id));
+        return;
+      }
+    }
+
     const info = insertChannelStmt.run({
       name: meta.name,
       url,
