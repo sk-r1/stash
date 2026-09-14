@@ -161,7 +161,10 @@ export interface DownloadOptions {
 function subtitleArgs(enabled: boolean, audioOnly: boolean): string[] {
   // Embedding subs into an audio-only extraction doesn't make sense.
   if (!enabled || audioOnly) return [];
-  return ["--write-subs", "--write-auto-subs", "--sub-langs", "en.*,de.*", "--embed-subs"];
+  // --ignore-errors: subtitles are a nice-to-have and their own fetch can
+  // fail independently of the video (e.g. YouTube rate-limiting subtitle
+  // requests with a 429) — that must not abort an otherwise-fine download.
+  return ["--write-subs", "--write-auto-subs", "--sub-langs", "en.*,de.*", "--embed-subs", "--ignore-errors"];
 }
 
 export interface DownloadHandlers {
