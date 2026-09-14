@@ -10,6 +10,7 @@ export function NavBar() {
       <div className="sidebar-brand">
         <StashLogo />
         <h1>Stash</h1>
+        <span className="sidebar-version">v{__APP_VERSION__}</span>
       </div>
       <nav>
         <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>
@@ -25,7 +26,6 @@ export function NavBar() {
           <SettingsIcon /> {t("nav_settings")}
         </NavLink>
       </nav>
-      <div className="sidebar-version">v{__APP_VERSION__}</div>
     </aside>
   );
 }
