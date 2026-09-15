@@ -46,9 +46,14 @@ export const de = {
   channels_audio_only: "Nur Audio",
   channels_delete: "Entfernen",
   channels_empty: "Noch keine Kanäle hinzugefügt.",
+  channels_check_all_button: "Alle Kanäle prüfen",
+  channels_check_all_none: "Keine neuen Videos in allen Kanälen gefunden",
   channel_picker_select_all: "Alle auswählen",
   channel_picker_dismiss: "Schließen",
   channel_picker_download: "Ausgewählte herunterladen",
+
+  category_search_placeholder: "Kategorien durchsuchen…",
+  category_search_none: "Keine passenden Kategorien",
 
   downloads_empty: "Keine aktiven Downloads.",
   downloads_cancel: "Abbrechen",
@@ -115,9 +120,14 @@ export const en: typeof de = {
   channels_audio_only: "Audio only",
   channels_delete: "Remove",
   channels_empty: "No channels added yet.",
+  channels_check_all_button: "Check all channels",
+  channels_check_all_none: "No new videos found across all channels",
   channel_picker_select_all: "Select all",
   channel_picker_dismiss: "Close",
   channel_picker_download: "Download selected",
+
+  category_search_placeholder: "Search categories…",
+  category_search_none: "No matching categories",
 
   downloads_empty: "No active downloads.",
   downloads_cancel: "Cancel",

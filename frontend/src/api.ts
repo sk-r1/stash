@@ -94,6 +94,10 @@ export const api = {
   deleteChannel: (id: number) => request<void>(`/api/channels/${id}`, { method: "DELETE" }),
   fetchChannelVideos: (id: number) =>
     request<ChannelVideoPreview[]>(`/api/channels/${id}/fetch`, { method: "POST" }),
+  checkAllChannels: () =>
+    request<{ channel: Channel; videos: ChannelVideoPreview[] }[]>("/api/channels/check-all", {
+      method: "POST",
+    }),
   downloadChannelVideos: (id: number, videos: ChannelVideoPreview[], audioOnly?: boolean) =>
     request<{ queued: number[] }>(`/api/channels/${id}/download`, {
       method: "POST",

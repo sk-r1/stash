@@ -94,6 +94,27 @@ router.post("/", async (req, res) => {
   }
 });
 
+/** Checks every subscribed channel for new videos in one go; nothing is inserted here. */
+router.post("/check-all", async (_req, res) => {
+  const channels = listChannelsStmt.all() as ChannelRow[];
+  const results: { channel: ChannelRow; videos: FlatEntry[] }[] = [];
+
+  // Sequential, not parallel: each check spawns a yt-dlp process, and a
+  // channel list can be large enough that firing them all at once would be
+  // a lot of concurrent subprocesses for one button click.
+  for (const channel of channels) {
+    try {
+      const found = await listNewVideosForChannel(channel);
+      if (found.length > 0) results.push({ channel, videos: found });
+    } catch {
+      // One channel failing to resolve (deleted/renamed upstream, transient
+      // network issue) shouldn't abort the check for the rest.
+    }
+  }
+
+  res.json(results);
+});
+
 router.put("/:id", (req, res) => {
   const channel = getChannelStmt.get(req.params.id) as ChannelRow | undefined;
   if (!channel) {
