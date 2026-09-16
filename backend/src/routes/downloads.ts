@@ -22,7 +22,7 @@ const setPendingQueuedStmt = db.prepare(
 const setDownloadingStmt = db.prepare("UPDATE videos SET status = 'downloading' WHERE id = ?");
 const setCompletedStmt = db.prepare(`
   UPDATE videos SET status = 'completed', video_file_path = ?, resolution = ?, audio_bitrate = ?,
-    file_size = ?, downloaded_at = datetime('now') WHERE id = ?
+    video_codec = ?, audio_codec = ?, file_size = ?, downloaded_at = datetime('now') WHERE id = ?
 `);
 const setErrorStmt = db.prepare(
   "UPDATE videos SET status = 'error', error_message = ? WHERE id = ?"
@@ -95,6 +95,8 @@ function startVideoDownload(videoId: number): void {
             result.filePath,
             meta.resolution,
             meta.audioBitrate,
+            meta.videoCodec,
+            meta.audioCodec,
             fileSize,
             videoId
           );

@@ -21,6 +21,22 @@ function formatBitrate(bps: number | null): string {
   return `${Math.round(bps / 1000)} kbps`;
 }
 
+const CODEC_LABELS: Record<string, string> = {
+  h264: "H.264",
+  hevc: "HEVC",
+  vp9: "VP9",
+  av1: "AV1",
+  aac: "AAC",
+  opus: "Opus",
+  mp3: "MP3",
+  vorbis: "Vorbis",
+};
+
+function formatCodec(codec: string | null): string | null {
+  if (!codec) return null;
+  return CODEC_LABELS[codec.toLowerCase()] || codec.toUpperCase();
+}
+
 export function VideoCard({
   video,
   selected,
@@ -58,7 +74,10 @@ export function VideoCard({
         </a>
       </div>
       <div className="meta">
-        {video.resolution || "—"} · {formatBitrate(video.audio_bitrate)}
+        {video.resolution || "—"}
+        {formatCodec(video.video_codec) && ` (${formatCodec(video.video_codec)})`} ·{" "}
+        {formatBitrate(video.audio_bitrate)}
+        {formatCodec(video.audio_codec) && ` (${formatCodec(video.audio_codec)})`}
         {!!video.audio_only && (
           <span className="audio-only-badge">
             <HeadphonesIcon size={12} /> {t("library_audio_only_badge")}

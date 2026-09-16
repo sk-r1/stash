@@ -7,6 +7,7 @@ import videosRouter from "./routes/videos";
 import downloadsRouter, { resumeQueuedDownloads } from "./routes/downloads";
 import settingsRouter from "./routes/settings";
 import categoriesRouter from "./routes/categories";
+import { backfillVideoCodecs } from "./codec-backfill";
 
 const BACKEND_PORT = Number(process.env.BACKEND_PORT) || 3001;
 const FRONTEND_PORT = Number(process.env.FRONTEND_PORT) || 3000;
@@ -34,6 +35,11 @@ app.get(/^(?!\/api).*/, (_req, res) => {
 
 recoverStuckDownloads();
 resumeQueuedDownloads();
+
+// Runs in the background, sequentially probing one file at a time — no need
+// to block server startup on it, and rows pick up their codec as soon as
+// their turn comes rather than all at once.
+backfillVideoCodecs().catch((err) => console.error("[codec-backfill] failed:", err));
 
 app.listen(BACKEND_PORT, () => {
   console.log(`Stash API listening on port ${BACKEND_PORT}`);

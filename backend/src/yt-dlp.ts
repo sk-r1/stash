@@ -180,20 +180,9 @@ export function startDownload(
   options: DownloadOptions,
   handlers: DownloadHandlers
 ): ChildProcess {
-  // YouTube's "best" video/audio streams are almost always VP9/AV1 + Opus,
-  // which desktop Chrome/Firefox decode fine but iOS/iPadOS cannot play at
-  // all in a <video> element (every browser there sits on WebKit, so it's
-  // not Safari-specific) — it shows a crossed-out play icon instead. Prefer
-  // H.264 (avc1) + AAC (mp4a), which iOS does support, and only fall back to
-  // the unrestricted "best" selection if a video has no such stream at all.
   const formatArgs = options.audioOnly
     ? ["-f", "bestaudio", "-x", "--audio-format", "m4a"]
-    : [
-        "-f",
-        "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/best[vcodec^=avc1][acodec^=mp4a]/bestvideo+bestaudio/best",
-        "--merge-output-format",
-        "mp4",
-      ];
+    : ["-f", "bestvideo+bestaudio/best", "--merge-output-format", "mp4"];
 
   const args = [
     ...formatArgs,

@@ -23,6 +23,8 @@ export interface VideoRow {
   thumbnail: string | null;
   resolution: string | null;
   audio_bitrate: number | null;
+  video_codec: string | null;
+  audio_codec: string | null;
   video_file_path: string | null;
   audio_only: 0 | 1;
   duration: number | null;

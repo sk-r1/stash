@@ -5,7 +5,16 @@ const FFPROBE_BIN = process.env.FFPROBE_BIN || "ffprobe";
 export interface ProbedMetadata {
   resolution: string | null;
   audioBitrate: number | null;
+  videoCodec: string | null;
+  audioCodec: string | null;
 }
+
+const EMPTY_METADATA: ProbedMetadata = {
+  resolution: null,
+  audioBitrate: null,
+  videoCodec: null,
+  audioCodec: null,
+};
 
 /** Best-effort metadata extraction; never throws — callers should still mark the download complete on failure. */
 export function probeMetadata(filePath: string): Promise<ProbedMetadata> {
@@ -22,10 +31,10 @@ export function probeMetadata(filePath: string): Promise<ProbedMetadata> {
 
     let stdout = "";
     child.stdout.on("data", (chunk) => (stdout += chunk));
-    child.on("error", () => resolve({ resolution: null, audioBitrate: null }));
+    child.on("error", () => resolve(EMPTY_METADATA));
     child.on("close", (code) => {
       if (code !== 0) {
-        resolve({ resolution: null, audioBitrate: null });
+        resolve(EMPTY_METADATA);
         return;
       }
       try {
@@ -46,9 +55,11 @@ export function probeMetadata(filePath: string): Promise<ProbedMetadata> {
         resolve({
           resolution,
           audioBitrate: Number.isFinite(audioBitrate) ? audioBitrate : null,
+          videoCodec: videoStream?.codec_name || null,
+          audioCodec: audioStream?.codec_name || null,
         });
       } catch {
-        resolve({ resolution: null, audioBitrate: null });
+        resolve(EMPTY_METADATA);
       }
     });
   });
