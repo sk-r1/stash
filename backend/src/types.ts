@@ -25,6 +25,7 @@ export interface VideoRow {
   audio_bitrate: number | null;
   video_codec: string | null;
   audio_codec: string | null;
+  color_transfer: string | null;
   video_file_path: string | null;
   audio_only: 0 | 1;
   duration: number | null;

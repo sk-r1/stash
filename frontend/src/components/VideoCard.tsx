@@ -37,6 +37,15 @@ function formatCodec(codec: string | null): string | null {
   return CODEC_LABELS[codec.toLowerCase()] || codec.toUpperCase();
 }
 
+// "arib-std-b67" = HLG, "smpte2084" = PQ — the two HDR transfer functions,
+// as opposed to plain SDR ("bt709" and friends). Browsers often render HDR
+// video without proper tone-mapping, which looks blown out/overexposed.
+const HDR_TRANSFERS = new Set(["arib-std-b67", "smpte2084"]);
+
+function isHdr(colorTransfer: string | null): boolean {
+  return !!colorTransfer && HDR_TRANSFERS.has(colorTransfer.toLowerCase());
+}
+
 export function VideoCard({
   video,
   selected,
@@ -81,6 +90,11 @@ export function VideoCard({
         {!!video.audio_only && (
           <span className="audio-only-badge">
             <HeadphonesIcon size={12} /> {t("library_audio_only_badge")}
+          </span>
+        )}
+        {isHdr(video.color_transfer) && (
+          <span className="hdr-badge" title={t("library_hdr_hint")}>
+            {t("library_hdr_badge")}
           </span>
         )}
       </div>

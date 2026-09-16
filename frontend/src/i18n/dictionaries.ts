@@ -23,6 +23,8 @@ export const de = {
   library_audio_only_badge: "Nur Audio",
   library_youtube_link: "Original auf YouTube ansehen",
   library_retry_hint: "Für erneuten Versuch auswählen",
+  library_hdr_badge: "HDR",
+  library_hdr_hint: "HDR-Video – Darstellung im Browser kann überbelichtet wirken. Bei Bedarf einen externen Player wie VLC nutzen.",
 
   category_editor_label: "Kategorien",
   category_none_defined: "Noch keine Kategorien angelegt (siehe Einstellungen).",
@@ -97,6 +99,8 @@ export const en: typeof de = {
   library_audio_only_badge: "Audio only",
   library_youtube_link: "View original on YouTube",
   library_retry_hint: "Select to retry",
+  library_hdr_badge: "HDR",
+  library_hdr_hint: "HDR video – may appear overexposed in the browser. Use an external player like VLC if needed.",
 
   category_editor_label: "Categories",
   category_none_defined: "No categories defined yet (see Settings).",

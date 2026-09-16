@@ -92,6 +92,9 @@ if (!hasColumn("videos", "video_codec")) {
 if (!hasColumn("videos", "audio_codec")) {
   db.exec("ALTER TABLE videos ADD COLUMN audio_codec TEXT");
 }
+if (!hasColumn("videos", "color_transfer")) {
+  db.exec("ALTER TABLE videos ADD COLUMN color_transfer TEXT");
+}
 
 // A channel can be reached via more than one valid URL (e.g. /channel/UC... vs
 // /@handle), so matching purely by URL string (as the add-channel and
