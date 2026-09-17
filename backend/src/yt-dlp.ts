@@ -19,25 +19,12 @@ function runCollectJson(args: string[]): Promise<any> {
     child.stderr.on("data", (chunk) => (stderr += chunk));
     child.on("error", reject);
     child.on("close", (code) => {
-      // TEMPORARY diagnostics for a reported "never finds new videos" bug
-      // — remove once resolved. stderr was previously only surfaced on
-      // failure, so a warning yt-dlp prints on an otherwise "successful"
-      // (exit 0) but empty result was invisible until now.
-      if (stderr.trim()) {
-        console.log(`[yt-dlp-json stderr] args=${JSON.stringify(args)}\n${stderr.trim()}`);
-      }
       if (code !== 0) {
         reject(new Error(`yt-dlp exited with code ${code}: ${stderr.trim() || "unknown error"}`));
         return;
       }
       try {
-        const parsed = JSON.parse(stdout);
-        console.log(
-          `[yt-dlp-json debug] args=${JSON.stringify(args)}: stdout length=${stdout.length} chars, ` +
-            `top-level keys=${JSON.stringify(Object.keys(parsed))}, ` +
-            `entries=${Array.isArray(parsed?.entries) ? parsed.entries.length : "n/a (" + typeof parsed?.entries + ")"}`
-        );
-        resolve(parsed);
+        resolve(JSON.parse(stdout));
       } catch (err) {
         reject(new Error(`Failed to parse yt-dlp JSON output: ${(err as Error).message}`));
       }
@@ -124,7 +111,12 @@ export async function listChannelVideos(url: string): Promise<FlatEntry[]> {
   const data = await runCollectJson(["--flat-playlist", "--dump-single-json", toVideosTabUrl(url)]);
   const entries: any[] = data.entries || [];
   return entries
-    .filter((e) => e && e.id && /^[A-Za-z0-9_-]{11}$/.test(e.id) && e._type !== "playlist" && e._type !== "url")
+    // Flat-playlist entries are always _type "url" by design (a flat entry
+    // is a lazy reference, not a fully-resolved video) — excluding "url"
+    // here was excluding every real video. The 11-char id check alone
+    // already rules out non-video pseudo-entries (e.g. a bare channel URL's
+    // tabs, which have channel-shaped ids), so only "playlist" needs excluding.
+    .filter((e) => e && e.id && /^[A-Za-z0-9_-]{11}$/.test(e.id) && e._type !== "playlist")
     .map((e) => ({
       youtubeId: e.id as string,
       title: (e.title as string) || e.id,
