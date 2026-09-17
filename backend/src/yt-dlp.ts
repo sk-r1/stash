@@ -6,14 +6,20 @@ const YT_DLP_BIN = process.env.YT_DLP_BIN || "yt-dlp";
 
 function runCollectJson(args: string[]): Promise<any> {
   return new Promise((resolve, reject) => {
-    const child = spawn(YT_DLP_BIN, args);
+    // stdin explicitly ignored (never inherited/left as an open pipe) to
+    // rule out any stdin-related stall/fallback behavior differing between
+    // this spawned-subprocess context and an interactive shell.
+    const child = spawn(YT_DLP_BIN, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, PYTHONUNBUFFERED: "1" },
+    });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk) => (stdout += chunk));
     child.stderr.on("data", (chunk) => (stderr += chunk));
     child.on("error", reject);
     child.on("close", (code) => {
-      // TEMPORARY diagnostics for a reported "0 entries" channel-listing bug
+      // TEMPORARY diagnostics for a reported "never finds new videos" bug
       // — remove once resolved. stderr was previously only surfaced on
       // failure, so a warning yt-dlp prints on an otherwise "successful"
       // (exit 0) but empty result was invisible until now.
@@ -25,7 +31,13 @@ function runCollectJson(args: string[]): Promise<any> {
         return;
       }
       try {
-        resolve(JSON.parse(stdout));
+        const parsed = JSON.parse(stdout);
+        console.log(
+          `[yt-dlp-json debug] args=${JSON.stringify(args)}: stdout length=${stdout.length} chars, ` +
+            `top-level keys=${JSON.stringify(Object.keys(parsed))}, ` +
+            `entries=${Array.isArray(parsed?.entries) ? parsed.entries.length : "n/a (" + typeof parsed?.entries + ")"}`
+        );
+        resolve(parsed);
       } catch (err) {
         reject(new Error(`Failed to parse yt-dlp JSON output: ${(err as Error).message}`));
       }
