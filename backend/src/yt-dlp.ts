@@ -13,6 +13,13 @@ function runCollectJson(args: string[]): Promise<any> {
     child.stderr.on("data", (chunk) => (stderr += chunk));
     child.on("error", reject);
     child.on("close", (code) => {
+      // TEMPORARY diagnostics for a reported "0 entries" channel-listing bug
+      // — remove once resolved. stderr was previously only surfaced on
+      // failure, so a warning yt-dlp prints on an otherwise "successful"
+      // (exit 0) but empty result was invisible until now.
+      if (stderr.trim()) {
+        console.log(`[yt-dlp-json stderr] args=${JSON.stringify(args)}\n${stderr.trim()}`);
+      }
       if (code !== 0) {
         reject(new Error(`yt-dlp exited with code ${code}: ${stderr.trim() || "unknown error"}`));
         return;
