@@ -20,5 +20,15 @@ const existingYoutubeIdStmt = db.prepare("SELECT 1 FROM videos WHERE youtube_id 
  */
 export async function listNewVideosForChannel(channel: ChannelRow): Promise<FlatEntry[]> {
   const entries = await listChannelVideos(channel.url);
-  return entries.filter((e) => !existingYoutubeIdStmt.get(e.youtubeId));
+  const newEntries = entries.filter((e) => !existingYoutubeIdStmt.get(e.youtubeId));
+
+  // TEMPORARY diagnostics for a reported "no new videos found" bug on a very
+  // large channel — remove once resolved.
+  console.log(
+    `[fetch-videos-debug] channel="${channel.name}" url="${channel.url}": yt-dlp returned ` +
+      `${entries.length} entries, ${newEntries.length} considered new. ` +
+      `First 5 ids from yt-dlp: ${entries.slice(0, 5).map((e) => `${e.youtubeId} (${e.title})`).join(" | ") || "(none)"}`
+  );
+
+  return newEntries;
 }
