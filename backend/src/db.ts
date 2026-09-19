@@ -71,6 +71,12 @@ db.exec(`
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     PRIMARY KEY (video_id, category_id)
   );
+
+  -- Remembers videos the user deleted, so "fetch new videos" doesn't offer them again.
+  CREATE TABLE IF NOT EXISTS deleted_videos (
+    youtube_id TEXT PRIMARY KEY,
+    deleted_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // CREATE TABLE IF NOT EXISTS is a no-op on a table that already exists, so a

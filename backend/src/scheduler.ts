@@ -2,7 +2,13 @@ import { db } from "./db";
 import { listChannelVideos, FlatEntry } from "./yt-dlp";
 import { ChannelRow } from "./types";
 
-const existingYoutubeIdStmt = db.prepare("SELECT 1 FROM videos WHERE youtube_id = ?");
+// Known = still in the library, or deleted by the user on purpose.
+const existingYoutubeIdStmt = db.prepare(
+  `SELECT 1 FROM videos WHERE youtube_id = @id
+   UNION ALL
+   SELECT 1 FROM deleted_videos WHERE youtube_id = @id
+   LIMIT 1`
+);
 
 /**
  * On-demand "fetch new videos" for a channel, WITHOUT inserting anything —
@@ -28,7 +34,7 @@ export async function listNewVideosForChannel(channel: ChannelRow): Promise<Flat
   const entries = await listChannelVideos(channel.url);
   const newEntries: FlatEntry[] = [];
   for (const entry of entries) {
-    if (existingYoutubeIdStmt.get(entry.youtubeId)) break;
+    if (existingYoutubeIdStmt.get({ id: entry.youtubeId })) break;
     newEntries.push(entry);
   }
   return newEntries;

@@ -50,6 +50,7 @@ function toClientVideo(row: VideoRow & { channel_name?: string }) {
 const getVideoStmt = db.prepare("SELECT * FROM videos WHERE id = ?");
 const getVideoByYoutubeIdStmt = db.prepare("SELECT * FROM videos WHERE youtube_id = ?");
 const deleteVideoStmt = db.prepare("DELETE FROM videos WHERE id = ?");
+const rememberDeletedStmt = db.prepare("INSERT OR IGNORE INTO deleted_videos (youtube_id) VALUES (?)");
 const updateTagsStmt = db.prepare("UPDATE videos SET tags = ? WHERE id = ?");
 const deleteVideoCategoriesStmt = db.prepare("DELETE FROM video_categories WHERE video_id = ?");
 const insertVideoCategoryStmt = db.prepare(
@@ -262,6 +263,7 @@ router.delete("/:id", (req, res) => {
   if (video.video_file_path && fs.existsSync(video.video_file_path)) {
     fs.unlinkSync(video.video_file_path);
   }
+  rememberDeletedStmt.run(video.youtube_id);
   deleteVideoStmt.run(video.id);
   res.status(204).end();
 });
