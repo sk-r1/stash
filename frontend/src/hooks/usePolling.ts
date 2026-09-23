@@ -18,15 +18,27 @@ export function usePolling<T>(
   const [loading, setLoading] = useState(true);
   const fetchFnRef = useRef(fetchFn);
   fetchFnRef.current = fetchFn;
+  // Responses can arrive out of order (e.g. a slow request for the previous
+  // filter finishing after the one for the new filter) — only apply a
+  // response if no newer request has already been applied.
+  const lastStartedRef = useRef(0);
+  const lastAppliedRef = useRef(0);
 
   const run = useCallback(() => {
+    const seq = ++lastStartedRef.current;
     fetchFnRef
       .current()
       .then((result) => {
+        if (seq < lastAppliedRef.current) return;
+        lastAppliedRef.current = seq;
         setData(result);
         setError(null);
       })
-      .catch((err: Error) => setError(err.message))
+      .catch((err: Error) => {
+        if (seq < lastAppliedRef.current) return;
+        lastAppliedRef.current = seq;
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Category, Video } from "../api";
 import { StatusBadge } from "./StatusBadge";
 import { TagEditor } from "./TagEditor";
@@ -57,6 +58,14 @@ export function VideoCard({
   onPlay,
 }: Props) {
   const { t } = useTranslation();
+  // Stored thumbnail first, then YouTube's unsigned per-id image (older rows
+  // may hold signed URLs that stop working, yt-dlp #402), then a placeholder.
+  const thumbCandidates = [video.thumbnail, `https://i.ytimg.com/vi/${video.youtube_id}/hqdefault.jpg`].filter(
+    (src, i, all): src is string => !!src && all.indexOf(src) === i
+  );
+  const [thumbIndex, setThumbIndex] = useState(0);
+  const thumbSrc = thumbCandidates[thumbIndex];
+
   return (
     <div className="card video-card">
       <label
@@ -72,7 +81,11 @@ export function VideoCard({
         />
         <StatusBadge status={video.status} />
       </label>
-      {video.thumbnail ? <img src={video.thumbnail} alt="" /> : <div className="video-card-thumb-placeholder" />}
+      {thumbSrc ? (
+        <img src={thumbSrc} alt="" onError={() => setThumbIndex((i) => i + 1)} />
+      ) : (
+        <div className="video-card-thumb-placeholder" />
+      )}
       <div className="title" title={video.title}>
         {video.title}
       </div>

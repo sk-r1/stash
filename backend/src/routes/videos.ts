@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { db } from "../db";
 import { getVideoMetadata } from "../yt-dlp";
-import { enqueueVideoForDownload } from "./downloads";
+import { abortDownload, enqueueVideoForDownload } from "./downloads";
 import { ChannelRow, VideoRow } from "../types";
 
 const router = Router();
@@ -99,15 +99,6 @@ router.get("/", (req, res) => {
   if (category_id) {
     clauses.push("v.id IN (SELECT video_id FROM video_categories WHERE category_id = @category_id)");
     params.category_id = category_id;
-
-    // TEMPORARY diagnostics for a reported filter bug — remove once resolved.
-    const rawRows = db
-      .prepare("SELECT video_id, category_id FROM video_categories WHERE category_id = ?")
-      .all(category_id);
-    console.log(
-      `[category-filter-debug] requested category_id=${JSON.stringify(category_id)} (typeof ${typeof category_id}); ` +
-        `video_categories rows: ${JSON.stringify(rawRows)}`
-    );
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
@@ -121,12 +112,6 @@ router.get("/", (req, res) => {
        ORDER BY ${sortColumn} DESC`
     )
     .all(params) as VideoRow[];
-
-  if (category_id) {
-    console.log(
-      `[category-filter-debug] final query returned video ids: ${rows.map((r) => r.id).join(",")}`
-    );
-  }
 
   const withTags = rows.map(toClientVideo);
   res.json(tag ? withTags.filter((v) => v.tags.includes(tag)) : withTags);
@@ -163,20 +148,11 @@ router.put("/:id", (req, res) => {
       res.status(400).json({ error: "category_ids must be an array of numbers" });
       return;
     }
-    // TEMPORARY diagnostics for a reported filter bug — remove once resolved.
-    console.log(
-      `[category-filter-debug] assigning categories to video id=${video.id} (status=${video.status}): ` +
-        JSON.stringify(category_ids)
-    );
     const setCategories = db.transaction((ids: number[]) => {
       deleteVideoCategoriesStmt.run(video.id);
       for (const id of ids) insertVideoCategoryStmt.run(video.id, id);
     });
     setCategories(category_ids);
-    console.log(
-      `[category-filter-debug] video id=${video.id} now has video_categories rows: ` +
-        JSON.stringify(getCategoriesForVideo(video.id))
-    );
   }
 
   res.json(toClientVideo(getVideoStmt.get(video.id) as VideoRow));
@@ -260,6 +236,7 @@ router.delete("/:id", (req, res) => {
     res.status(404).json({ error: "Video not found" });
     return;
   }
+  abortDownload(video.id);
   if (video.video_file_path && fs.existsSync(video.video_file_path)) {
     fs.unlinkSync(video.video_file_path);
   }

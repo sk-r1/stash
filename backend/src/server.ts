@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import path from "node:path";
 import { recoverStuckDownloads } from "./db";
 import channelsRouter from "./routes/channels";
@@ -14,8 +13,10 @@ const FRONTEND_PORT = Number(process.env.FRONTEND_PORT) || 3000;
 const FRONTEND_DIST = path.join(__dirname, "..", "..", "frontend", "dist");
 const VIDEOS_PATH = process.env.VIDEOS_PATH || path.join(__dirname, "..", "..", "videos");
 
+// No CORS middleware on purpose: the frontend is served by this same app, so
+// its /api calls are same-origin. Allowing any origin would let any website
+// the user visits drive this API (delete videos, start downloads).
 const app = express();
-app.use(cors());
 app.use(express.json());
 
 app.use("/api/channels", channelsRouter);

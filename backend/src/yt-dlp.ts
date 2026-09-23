@@ -78,6 +78,7 @@ export async function resolveChannel(url: string): Promise<ChannelMeta> {
     "--playlist-items",
     "0",
     "--dump-single-json",
+    "--",
     url,
   ]);
   const thumbnails: Array<{ url: string }> = data.thumbnails || [];
@@ -102,13 +103,22 @@ function bestThumbnail(thumbnails: Array<{ url: string }> | undefined): string |
 }
 
 /**
+ * Unsigned, always-present thumbnail for a video id. Flat-playlist entries
+ * only carry signed URLs (sqp/rs query params) that can stop working later
+ * (yt-dlp issue #402); this one doesn't expire.
+ */
+export function stableThumbnailUrl(youtubeId: string): string {
+  return `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`;
+}
+
+/**
  * Cheap listing of a channel's videos: a single yt-dlp call for the whole channel,
  * using whatever lightweight fields the tab page already exposes (no per-video
  * metadata resolution — that would mean one extra yt-dlp process per video, which
  * is far too slow for channels with more than a handful of uploads).
  */
 export async function listChannelVideos(url: string): Promise<FlatEntry[]> {
-  const data = await runCollectJson(["--flat-playlist", "--dump-single-json", toVideosTabUrl(url)]);
+  const data = await runCollectJson(["--flat-playlist", "--dump-single-json", "--", toVideosTabUrl(url)]);
   const entries: any[] = data.entries || [];
   return entries
     // Flat-playlist entries are always _type "url" by design (a flat entry
@@ -121,7 +131,7 @@ export async function listChannelVideos(url: string): Promise<FlatEntry[]> {
       youtubeId: e.id as string,
       title: (e.title as string) || e.id,
       url: (e.url as string) || `https://www.youtube.com/watch?v=${e.id}`,
-      thumbnail: bestThumbnail(e.thumbnails),
+      thumbnail: stableThumbnailUrl(e.id),
       duration: typeof e.duration === "number" ? e.duration : null,
     }));
 }
@@ -140,7 +150,7 @@ export interface VideoMeta {
 
 /** Full metadata for a single video, without downloading it — used for adding one video by URL. */
 export async function getVideoMetadata(url: string): Promise<VideoMeta> {
-  const data = await runCollectJson(["--dump-json", "--no-download", "--no-playlist", url]);
+  const data = await runCollectJson(["--dump-json", "--no-download", "--no-playlist", "--", url]);
   const channelUrl: string | null = data.channel_url || data.uploader_url || null;
   return {
     youtubeId: data.id,
@@ -206,6 +216,9 @@ export function startDownload(
     "after_move:filepath",
     ...sponsorBlockArgs(options.sponsorblockEnabled),
     ...subtitleArgs(options.subtitlesEnabled, options.audioOnly),
+    // "--" ends option parsing, so a URL starting with "-" (e.g. "--exec=...")
+    // can never be interpreted as a yt-dlp option.
+    "--",
     url,
   ];
 
@@ -216,12 +229,7 @@ export function startDownload(
   let stderr = "";
   let filePath: string | null = null;
 
-  // child_process pipes never reach `docker logs` on their own — only what
-  // this Node process itself writes to console does. Echoing every raw line
-  // (temporarily; safe to remove once progress parsing is confirmed working)
-  // is the only way to see yt-dlp's actual output format from the container.
   function handleStdoutLine(line: string): void {
-    console.log(`[yt-dlp stdout] ${line}`);
     const match = PROGRESS_RE.exec(line);
     if (match) {
       handlers.onProgress({
@@ -240,7 +248,6 @@ export function startDownload(
   // Depending on version/config, yt-dlp's progress line can land on stdout or
   // stderr — listen on both rather than gamble on which one this build uses.
   function handleStderrLine(line: string): void {
-    console.log(`[yt-dlp stderr] ${line}`);
     const match = PROGRESS_RE.exec(line);
     if (match) {
       handlers.onProgress({

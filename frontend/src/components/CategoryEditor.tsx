@@ -13,7 +13,11 @@ export function CategoryEditor({ assigned, allCategories, onSave }: Props) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
-  const assignedIds = new Set(assigned.map((c) => c.id));
+  // While editing, the selection lives here instead of being re-derived from
+  // `assigned`: that prop only catches up after save + refresh, so a second
+  // quick toggle computed from it would silently drop the first one.
+  const [editIds, setEditIds] = useState<number[] | null>(null);
+  const assignedIds = new Set(editIds ?? assigned.map((c) => c.id));
 
   // Assigned categories float to the top so they stay visible once the list
   // scrolls, and a search filters the rest — a flat checkbox list per
@@ -26,18 +30,25 @@ export function CategoryEditor({ assigned, allCategories, onSave }: Props) {
       const bSel = assignedIds.has(b.id) ? 0 : 1;
       return aSel !== bSel ? aSel - bSel : a.name.localeCompare(b.name);
     });
-  }, [allCategories, query, assigned]);
+  }, [allCategories, query, assigned, editIds]);
 
   async function toggle(categoryId: number) {
     const next = assignedIds.has(categoryId)
-      ? assigned.filter((c) => c.id !== categoryId).map((c) => c.id)
+      ? [...assignedIds].filter((id) => id !== categoryId)
       : [...assignedIds, categoryId];
+    setEditIds(next);
     await onSave(next);
   }
 
   function startEditing() {
     setQuery("");
+    setEditIds(assigned.map((c) => c.id));
     setEditing(true);
+  }
+
+  function stopEditing() {
+    setEditIds(null);
+    setEditing(false);
   }
 
   if (editing) {
@@ -74,7 +85,7 @@ export function CategoryEditor({ assigned, allCategories, onSave }: Props) {
             </div>
           </>
         )}
-        <button className="icon-btn" onClick={() => setEditing(false)} aria-label="done">
+        <button className="icon-btn" onClick={stopEditing} aria-label="done">
           {t("common_done")}
         </button>
       </div>

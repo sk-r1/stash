@@ -66,7 +66,9 @@ function startVideoDownload(videoId: number): void {
   const outputTemplate = path.join(
     VIDEOS_PATH,
     sanitizeForPath(video.channel_name),
-    "%(title)s.%(ext)s"
+    // The id keeps two same-titled uploads of one channel from colliding
+    // on a single file (and one delete removing the other's file).
+    "%(title)s [%(id)s].%(ext)s"
   );
 
   const child = startDownload(
@@ -91,13 +93,15 @@ function startVideoDownload(videoId: number): void {
           } catch {
             fileSize = null;
           }
+          // "" = probed but not present (e.g. SDR has no color_transfer), so the
+          // startup backfill doesn't re-probe this file on every boot.
           setCompletedStmt.run(
             result.filePath,
             meta.resolution,
             meta.audioBitrate,
-            meta.videoCodec,
-            meta.audioCodec,
-            meta.colorTransfer,
+            meta.videoCodec ?? "",
+            meta.audioCodec ?? "",
+            meta.colorTransfer ?? "",
             fileSize,
             videoId
           );
@@ -135,6 +139,13 @@ export function enqueueVideoForDownload(videoId: number, audioOnly?: boolean): b
   if (!queue.includes(videoId)) queue.push(videoId);
   tryStartNext();
   return true;
+}
+
+/** Drops a video from the queue and kills its yt-dlp process if running — used before deleting it. */
+export function abortDownload(videoId: number): void {
+  const queued = queue.indexOf(videoId);
+  if (queued !== -1) queue.splice(queued, 1);
+  active.get(videoId)?.kill("SIGTERM");
 }
 
 function parseTags(tags: string | null): string[] {

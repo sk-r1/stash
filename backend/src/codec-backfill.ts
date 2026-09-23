@@ -22,6 +22,8 @@ export async function backfillVideoCodecs(): Promise<void> {
   const rows = pendingBackfillStmt.all() as { id: number; video_file_path: string }[];
   for (const row of rows) {
     const meta = await probeMetadata(row.video_file_path);
-    setCodecsStmt.run(meta.videoCodec, meta.audioCodec, meta.colorTransfer, row.id);
+    // "" = probed but not present (SDR files have no color_transfer, audio-only
+    // files no video codec) — NULL would get the row re-probed every boot.
+    setCodecsStmt.run(meta.videoCodec ?? "", meta.audioCodec ?? "", meta.colorTransfer ?? "", row.id);
   }
 }

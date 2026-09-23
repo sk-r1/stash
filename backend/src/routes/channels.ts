@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db";
-import { resolveChannel, FlatEntry } from "../yt-dlp";
+import { resolveChannel, stableThumbnailUrl, FlatEntry } from "../yt-dlp";
 import { listNewVideosForChannel } from "../scheduler";
 import { enqueueVideoForDownload } from "./downloads";
 import { ChannelRow, VideoRow } from "../types";
@@ -177,18 +177,20 @@ router.post("/:id/download", (req, res) => {
 
   const queued: number[] = [];
   for (const v of videos) {
-    if (!v || !v.youtubeId) continue;
+    if (!v || typeof v.youtubeId !== "string" || !/^[A-Za-z0-9_-]{11}$/.test(v.youtubeId)) continue;
 
     let row = getVideoByYoutubeIdStmt.get(v.youtubeId) as VideoRow | undefined;
     if (!row) {
       const effectiveAudioOnly = audio_only !== undefined ? (audio_only ? 1 : 0) : channel.audio_only;
+      // URL and thumbnail are derived from the validated id rather than
+      // trusted from the request body, which later gets handed to yt-dlp.
       const info = insertVideoStmt.run({
         channel_id: channel.id,
         youtube_id: v.youtubeId,
-        title: v.title,
+        title: String(v.title || v.youtubeId),
         description: null,
-        url: v.url,
-        thumbnail: v.thumbnail,
+        url: `https://www.youtube.com/watch?v=${v.youtubeId}`,
+        thumbnail: stableThumbnailUrl(v.youtubeId),
         duration: v.duration,
         audio_only: effectiveAudioOnly,
       });
