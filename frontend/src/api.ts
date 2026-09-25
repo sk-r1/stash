@@ -119,7 +119,7 @@ export const api = {
     search?: string;
     sort?: string;
     tag?: string;
-    category_id?: number;
+    category_ids?: number[];
   }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set("status", filters.status);
@@ -127,7 +127,7 @@ export const api = {
     if (filters.search) params.set("search", filters.search);
     if (filters.sort) params.set("sort", filters.sort);
     if (filters.tag) params.set("tag", filters.tag);
-    if (filters.category_id) params.set("category_id", String(filters.category_id));
+    if (filters.category_ids?.length) params.set("category_ids", filters.category_ids.join(","));
     const qs = params.toString();
     return request<Video[]>(`/api/videos${qs ? `?${qs}` : ""}`);
   },

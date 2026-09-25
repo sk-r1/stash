@@ -5,6 +5,7 @@ services:
     ports:
       - "6070:3000" # Frontend
       - "6071:3001" # Backend API
+    # Adjust the host paths (left side) to your NAS, e.g. volume4 -> volume1.
     volumes:
       - /volume4/docker/stash/data:/app/data
       - /volume4/docker/stash/videos:/videos

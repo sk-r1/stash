@@ -14,7 +14,7 @@ const DEFAULT_FILTERS: VideoFilters = {
   search: "",
   sort: "date",
   tag: "",
-  category_id: "",
+  category_ids: [],
 };
 
 export function LibraryView() {
@@ -42,6 +42,9 @@ export function LibraryView() {
   useEffect(refreshTags, []);
   useEffect(refreshCategories, []);
 
+  // Joined to a string so the dependency lists compare by value, not array identity.
+  const categoryIdsKey = filters.category_ids.join(",");
+
   const fetchVideos = useMemo(
     () => () =>
       api.getVideos({
@@ -50,9 +53,10 @@ export function LibraryView() {
         search: filters.search || undefined,
         sort: filters.sort,
         tag: filters.tag || undefined,
-        category_id: filters.category_id ? Number(filters.category_id) : undefined,
+        category_ids: filters.category_ids,
       }),
-    [filters.status, filters.channel_id, filters.search, filters.sort, filters.tag, filters.category_id]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters.status, filters.channel_id, filters.search, filters.sort, filters.tag, categoryIdsKey]
   );
 
   const { data: videos, error, refresh } = usePolling(fetchVideos, 3000, [
@@ -61,7 +65,7 @@ export function LibraryView() {
     filters.search,
     filters.sort,
     filters.tag,
-    filters.category_id,
+    categoryIdsKey,
   ]);
 
   function toggleSelect(id: number) {

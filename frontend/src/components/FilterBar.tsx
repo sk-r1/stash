@@ -1,5 +1,6 @@
 import { Category, Channel } from "../api";
 import { SearchIcon } from "./Icons";
+import { CategoryFilter } from "./CategoryFilter";
 import { useTranslation } from "../i18n/I18nContext";
 
 export interface VideoFilters {
@@ -8,7 +9,7 @@ export interface VideoFilters {
   search: string;
   sort: string;
   tag: string;
-  category_id: string;
+  category_ids: number[];
 }
 
 interface Props {
@@ -53,17 +54,11 @@ export function FilterBar({ channels, tags, categories, filters, onChange }: Pro
           <option value="error">{t("status_error")}</option>
         </select>
         {categories.length > 0 && (
-          <select
-            value={filters.category_id}
-            onChange={(e) => onChange({ ...filters, category_id: e.target.value })}
-          >
-            <option value="">{t("library_filter_all_categories")}</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <CategoryFilter
+            categories={categories}
+            selectedIds={filters.category_ids}
+            onChange={(ids) => onChange({ ...filters, category_ids: ids })}
+          />
         )}
         {tags.length > 0 && (
           <select value={filters.tag} onChange={(e) => onChange({ ...filters, tag: e.target.value })}>

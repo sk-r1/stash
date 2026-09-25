@@ -76,7 +76,7 @@ const SORT_COLUMNS: Record<string, string> = {
 };
 
 router.get("/", (req, res) => {
-  const { status, channel_id, search, sort, tag, category_id } = req.query as Record<
+  const { status, channel_id, search, sort, tag, category_ids } = req.query as Record<
     string,
     string | undefined
   >;
@@ -96,9 +96,21 @@ router.get("/", (req, res) => {
     clauses.push("v.title LIKE @search");
     params.search = `%${search}%`;
   }
-  if (category_id) {
-    clauses.push("v.id IN (SELECT video_id FROM video_categories WHERE category_id = @category_id)");
-    params.category_id = category_id;
+  if (category_ids) {
+    // Comma-separated, OR-combined: a video matches if it has any of them.
+    const ids = String(category_ids)
+      .split(",")
+      .map(Number)
+      .filter((id) => Number.isInteger(id) && id > 0);
+    if (ids.length > 0) {
+      const placeholders = ids.map((id, i) => {
+        params[`cat${i}`] = id;
+        return `@cat${i}`;
+      });
+      clauses.push(
+        `v.id IN (SELECT video_id FROM video_categories WHERE category_id IN (${placeholders.join(", ")}))`
+      );
+    }
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";

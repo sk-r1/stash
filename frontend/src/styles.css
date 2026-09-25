@@ -320,6 +320,58 @@ select {
   align-items: center;
 }
 
+.category-filter {
+  position: relative;
+}
+
+.category-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 16rem;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.category-filter-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-filter-button::after {
+  content: "";
+  flex-shrink: 0;
+  width: 0.4em;
+  height: 0.4em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-25%) rotate(45deg);
+}
+
+.category-filter-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+  width: max-content;
+  max-width: 20rem;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
 .progress-bar {
   height: 8px;
   border-radius: 999px;
