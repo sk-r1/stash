@@ -76,3 +76,11 @@ Stash has no login. Keep it on your local network and don't expose the ports to 
 - Channel checks are manual only — there is no background scheduler. Use "Fetch new videos" on a channel to look for new uploads.
 - Removing a channel that still has videos only unsubscribes it; its videos stay in the library. Channels without videos are deleted.
 - Cancelling a download marks it as `error` with an explanatory message (the schema has no separate "cancelled" status).
+
+## Credits
+
+Stash was created by Sönke Kastner with the help of [Claude](https://www.anthropic.com/claude) (Anthropic), using [Claude Code](https://claude.com/claude-code).
+
+## License
+
+[MIT](LICENSE) © 2026 Sönke Kastner
